@@ -1,0 +1,377 @@
+let statusInterval;
+let brightnessTimeout;
+let wechselzeitTimeout;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadStatus();
+    statusInterval = setInterval(loadStatus, 5000);
+    
+    // Event Listeners
+    document.getElementById('wifiForm').addEventListener('submit', handleWiFiSubmit);
+    document.getElementById('mqttForm').addEventListener('submit', handleMQTTSubmit);
+
+});
+
+function toggleAccordion(id) {
+    const content = document.getElementById(id);
+    const header = content.previousElementSibling;
+    const icon = header.querySelector('.accordion-icon');
+    
+    if (content.classList.contains('active')) {
+        content.classList.remove('active');
+        icon.textContent = '+';
+        icon.style.transform = 'rotate(0deg)';
+    } else {
+        // Close all other accordions
+        document.querySelectorAll('.accordion-content').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelectorAll('.accordion-icon').forEach(icon => {
+            icon.textContent = '+';
+            icon.style.transform = 'rotate(0deg)';
+        });
+        
+        // Open clicked accordion
+        content.classList.add('active');
+        icon.textContent = '−';
+        icon.style.transform = 'rotate(180deg)';
+    }
+}
+
+async function loadStatus() {
+    try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        
+        document.getElementById('chipId').textContent = data.chip_id;
+        document.getElementById('mode').textContent = data.mode;
+        document.getElementById('ip').textContent = data.ip;
+        document.getElementById('wifiStatus').textContent = data.wifi_status;
+        document.getElementById('mqttStatus').textContent = data.mqtt_status;
+        document.getElementById('currentEffect').textContent = data.current_effect;
+        document.getElementById('currentBrightness').textContent = data.brightness || '-';
+        document.getElementById('currentWechselzeit').textContent = formatTime(data.auto_timer) || '-';
+
+        // Show/hide wechselzeit in status based on current effect
+        const wechselzeitStatus = document.getElementById('currentWechselzeitStatus');
+        const currentWechselzeit = document.getElementById('currentWechselzeit');
+        
+        if (parseInt(data.effect || 0) === 8) {
+            wechselzeitStatus.classList.add('show');
+            if (data.auto_timer !== undefined) {
+                currentWechselzeit.textContent = formatTime(data.auto_timer);
+            }
+        } else {
+            wechselzeitStatus.classList.remove('show');
+        }
+
+        // Update form values
+        document.getElementById('ssid').value = data.wifi_ssid || '';
+        document.getElementById('mqttEnabled').checked = data.mqtt_enabled;
+        document.getElementById('mqttServer').value = data.mqtt_server || '';
+        document.getElementById('mqttPort').value = data.mqtt_port || 8883;
+        document.getElementById('mqttUser').value = data.mqtt_user || '';
+        document.getElementById('mqttTopic').value = data.mqtt_topic || 'esp32/status';
+        document.getElementById('effectSelect').value = data.effect || 0;
+        
+        // Show/hide wechselzeit container based on current effect
+        toggleWechselzeitVisibility(parseInt(data.effect || 0) === 8);
+
+        // Update brightness slider if value changed externally
+        if (data.brightness !== undefined) {
+            const slider = document.getElementById('brightnessSlider');
+            if (Math.abs(slider.value - data.brightness) > 5) { // Only update if significantly different
+                slider.value = data.brightness;
+                updateBrightness(data.brightness, false);
+            }
+        }
+
+        // Update wechselzeit slider if value changed externally
+        if (data.auto_timer !== undefined) {
+            const slider = document.getElementById('wechselzeitSlider');
+            if (Math.abs(slider.value - data.auto_timer) > 5) { // Only update if significantly different
+                slider.value = data.auto_timer;
+                updateWechselzeit(data.auto_timer, false);
+            }
+        }
+
+    } catch (error) {
+        console.error('Error loading status:', error);
+    }
+}
+
+function toggleWechselzeitVisibility(show) {
+    const container = document.getElementById('wechselzeitContainer');
+    if (show) {
+        container.classList.add('show');
+    } else {
+        container.classList.remove('show');
+    }
+}
+
+function formatTime(seconds) {
+    if (seconds < 60) {
+        return seconds === 1 ? '1 Sekunde' : `${seconds} Sekunden`;
+    } else {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        if (remainingSeconds === 0) {
+            return minutes === 1 ? '1 Minute' : `${minutes} Minuten`;
+        } else {
+            return `${minutes} Min ${remainingSeconds}s`;
+        }
+    }
+}
+
+function updateBrightness(value, updateServer = true) {
+    const brightnessValue = document.getElementById('brightnessValue');
+    brightnessValue.textContent = value;
+    
+    if (updateServer) {
+        // Debounce API calls while sliding
+        clearTimeout(brightnessTimeout);
+        brightnessTimeout = setTimeout(() => {
+            setBrightness(value);
+        }, 300);
+    }
+}
+
+function updateWechselzeit(value, updateServer = true) {
+    const wechselzeitValue = document.getElementById('wechselzeitValue');
+    
+    wechselzeitValue.textContent = formatTime(value);
+    
+    if (value < 60) {
+        wechselzeitDisplay.textContent = `${value}s`;
+    } else {
+        const minutes = Math.floor(value / 60);
+        const seconds = value % 60;
+        if (seconds === 0) {
+            wechselzeitDisplay.textContent = `${minutes}m`;
+        } else {
+            wechselzeitDisplay.textContent = `${minutes}m ${seconds}s`;
+        }
+    }
+    
+    if (updateServer) {
+        // Debounce API calls while sliding
+        clearTimeout(wechselzeitTimeout);
+        wechselzeitTimeout = setTimeout(() => {
+            setWechselzeit(value);
+        }, 300);
+    }
+}
+
+async function setBrightness(value) {
+    try {
+        const response = await fetch('/api/brightness', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ brightness: parseInt(value) })
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            showMessage('Fehler beim Ändern der Helligkeit', 'error');
+        }
+    } catch (error) {
+        console.error('Error setting brightness:', error);
+        showMessage('Verbindungsfehler beim Ändern der Helligkeit', 'error');
+    }
+}
+
+async function setWechselzeit(value) {
+    try {
+        const response = await fetch('/api/auto-timer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ auto_timer: parseInt(value) })
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            showMessage('Fehler beim Ändern der Wechselzeit', 'error');
+        }
+    } catch (error) {
+        console.error('Error setting wechselzeit:', error);
+        showMessage('Verbindungsfehler beim Ändern der Wechselzeit', 'error');
+    }
+}
+
+async function scanWiFi() {
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Scanne...';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch('/api/scan');
+        const networks = await response.json();
+        
+        const wifiList = document.getElementById('wifiList');
+        wifiList.innerHTML = '';
+        
+        networks.forEach(network => {
+            const item = document.createElement('div');
+            item.className = 'wifi-item';
+            item.innerHTML = `
+                <span>${network.ssid}</span>
+                <span class="wifi-signal">${getSignalStrength(network.rssi)}</span>
+            `;
+            item.onclick = () => {
+                document.getElementById('ssid').value = network.ssid;
+            };
+            wifiList.appendChild(item);
+        });
+        
+    } catch (error) {
+        showMessage('Fehler beim Scannen der Netzwerke', 'error');
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+function getSignalStrength(rssi) {
+    if (rssi > -50) return '●●●●';
+    if (rssi > -60) return '●●●○';
+    if (rssi > -70) return '●●○○';
+    if (rssi > -80) return '●○○○';
+    return '○○○○';
+}
+
+async function handleWiFiSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        ssid: formData.get('ssid'),
+        password: formData.get('password')
+    };
+    
+    try {
+        const response = await fetch('/api/wifi', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage('WLAN-Konfiguration gespeichert. ESP wird neu gestartet...', 'success');
+            setTimeout(() => {
+                if (data.ssid) {
+                    window.location.href = 'http://esp32-config.local';
+                }
+            }, 3000);
+        } else {
+            showMessage('Fehler beim Speichern der WLAN-Konfiguration', 'error');
+        }
+    } catch (error) {
+        showMessage('Verbindungsfehler', 'error');
+    }
+}
+
+async function handleMQTTSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        enabled: formData.get('enabled') === 'on',
+        server: formData.get('server'),
+        port: parseInt(formData.get('port')),
+        user: formData.get('user'),
+        password: formData.get('password'),
+        topic: formData.get('topic')
+    };
+    
+    try {
+        const response = await fetch('/api/mqtt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage('MQTT-Konfiguration gespeichert', 'success');
+            loadStatus();
+        } else {
+            showMessage('Fehler beim Speichern der MQTT-Konfiguration', 'error');
+        }
+    } catch (error) {
+        showMessage('Verbindungsfehler', 'error');
+    }
+}
+
+async function changeEffect() {
+    const effect = document.getElementById('effectSelect').value;
+    
+    try {
+        const response = await fetch('/api/effect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ effect: parseInt(effect) })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage('Effekt geändert', 'success');
+            loadStatus();
+        } else {
+            showMessage('Fehler beim Ändern des Effekts', 'error');
+        }
+    } catch (error) {
+        showMessage('Verbindungsfehler', 'error');
+    }
+}
+
+async function resetConfig() {
+    if (!confirm('Sind Sie sicher, dass Sie die gesamte Konfiguration löschen möchten? Der ESP wird neu gestartet.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/reset', {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage('Konfiguration gelöscht. ESP wird neu gestartet...', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        } else {
+            showMessage('Fehler beim Löschen der Konfiguration', 'error');
+        }
+    } catch (error) {
+        showMessage('Verbindungsfehler', 'error');
+    }
+}
+
+function showMessage(text, type) {
+    const messageDiv = document.getElementById('message');
+    messageDiv.textContent = text;
+    messageDiv.className = `message ${type} show`;
+    
+    setTimeout(() => {
+        messageDiv.classList.remove('show');
+    }, 5000);
+}

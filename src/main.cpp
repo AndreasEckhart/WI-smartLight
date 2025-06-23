@@ -71,6 +71,11 @@ const unsigned long debounceDelay = 50;
 bool statusLedState = false;
 unsigned long statusLedTimer = 0;
 
+// MQTT finger count application
+int fingerCount = 0;
+String fingerColor = "blue";
+bool fingerMode = false;
+
 // Funktionen Prototypen
 void loadConfig();
 void saveConfig();
@@ -81,6 +86,7 @@ void setupWebServer();
 void setupMQTT();
 void reconnectMQTT();
 void publishStatus();
+void mqttCallback(char* topic, byte* payload, unsigned int length);
 void handleButton();
 void updateStatusLED();
 void updateNeoPixels();
@@ -108,6 +114,8 @@ void handleNotFound();
 String getEffectName(int effect);
 String getChipId();
 bool webAuthenticate();
+void fingerLedEffect();
+int parseColor(String colorName);
 
 void setup() {
   Serial.begin(115200);
@@ -261,7 +269,7 @@ void startWiFi() {
       
       Serial.print("Connecting to WiFi");
       int attempts = 0;
-      while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+      while (WiFi.status() != WL_CONNECTED && attempts < 5) {
         delay(1000);
         Serial.print(".");
         attempts++;
@@ -316,6 +324,7 @@ void setupMQTT() {
   if (mqtt_server.length() > 0) {
     wifiClient.setInsecure(); // Use this only for testing, it allows connecting without a root certificate
     mqttClient.setServer(mqtt_server.c_str(), mqtt_port);
+    mqttClient.setCallback(mqttCallback); // Callback setzen
     reconnectMQTT();
   }
 }
@@ -338,9 +347,9 @@ void reconnectMQTT() {
   
   if (connected) {
     Serial.println("MQTT connected");
-    publishStatus();
-    mqttClient.subscribe((mqtt_topic + "/effect").c_str());
-    mqttClient.subscribe((mqtt_topic + "/brightness").c_str());
+    //publishStatus();
+    mqttClient.subscribe((mqtt_topic).c_str());
+    //mqttClient.subscribe((mqtt_topic + "/brightness").c_str());
   } else {
     Serial.print("MQTT connection failed, rc=");
     Serial.println(mqttClient.state());
@@ -359,6 +368,53 @@ void publishStatus() {
     serializeJson(doc, payload);
     
     mqttClient.publish(mqtt_topic.c_str(), payload.c_str());
+  }
+}
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  // Payload zu String konvertieren
+  String message = "";
+  for (unsigned int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+  
+  Serial.print("MQTT Message received: ");
+  Serial.println(message);
+  
+  // JSON parsen
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, message);
+  
+  if (error) {
+    Serial.print("JSON Parse error: ");
+    Serial.println(error.c_str());
+    return;
+  }
+  
+  // Prüfen ob dev_id mit unserer Chip-ID übereinstimmt
+  String dev_id = doc["dev_id"].as<String>();
+  if (dev_id != getChipId()) {
+    Serial.println("Message not for this device");
+    return;
+  }
+  
+  // finger_count und color extrahieren
+  if (doc["finger_count"].is<int>()) {
+    fingerCount = doc["finger_count"];
+    if (doc["color"].is<String>()) {
+      fingerColor = doc["color"].as<String>();
+    }
+    
+    // Validierung
+    if (fingerCount >= 0 && fingerCount <= 5) {
+      fingerMode = true;
+      Serial.print("Finger mode activated: ");
+      Serial.print(fingerCount);
+      Serial.print(" LEDs, Color: ");
+      Serial.println(fingerColor);
+    } else {
+      Serial.println("Invalid finger_count (must be 0-5)");
+    }
   }
 }
 
@@ -387,6 +443,7 @@ void handleButton() {
         clearConfig();
         ESP.restart();
       } else if (pressDuration > 100) {
+        fingerMode = false; // Kurze Taste gedrückt = Finger-Modus deaktivieren
         // Kurze Taste gedrückt = LED Effekt wechseln
         currentEffect = (currentEffect + 1) % 9; // 0-8 Effekte
         if(currentEffect == 8) {
@@ -419,7 +476,10 @@ void updateNeoPixels() {
   if (millis() - lastEffectUpdate < effectSpeed) return;
   lastEffectUpdate = millis();
   
-  if (autoMode) {
+  // Finger-Modus hat Priorität
+  if (fingerMode) {
+    fingerLedEffect();
+  } else if (autoMode) {
     // Auto-Modus: alle Effekte nacheinander
     if (millis() - autoModeTimer > currentAutoTimer * 1000) { // konfigurierte Wechelzeit pro Effekt
       autoModeIndex = (autoModeIndex + 1) % 8;
@@ -798,4 +858,40 @@ bool webAuthenticate() {
     return false;
   }
   return true;
+}
+
+void fingerLedEffect() {
+  strip.clear();
+  
+  if (fingerCount > 0) {
+    uint32_t color = parseColor(fingerColor);
+    
+    for (int finger = 0; finger < fingerCount; finger++) {
+      int startPos = finger * 5; // Jeder Finger beginnt bei Position 0, 5, 10, 15, 20
+      
+      // 2 LEDs pro Finger einschalten
+      for (int led = 0; led < 2; led++) {
+        int ledPos = startPos + led;
+        if (ledPos < strip.numPixels()) {
+          strip.setPixelColor(ledPos, color);
+        }
+      }
+    }
+  }
+}
+
+// Hilfsfunktion zum Parsen der Farbe:
+int parseColor(String colorName) {
+  colorName.toLowerCase();
+  
+  if (colorName == "red") return strip.Color(255, 0, 0);
+  else if (colorName == "green") return strip.Color(0, 255, 0);
+  else if (colorName == "blue") return strip.Color(0, 0, 255);
+  else if (colorName == "yellow") return strip.Color(255, 255, 0);
+  else if (colorName == "purple") return strip.Color(128, 0, 128);
+  else if (colorName == "orange") return strip.Color(255, 165, 0);
+  else if (colorName == "pink") return strip.Color(255, 192, 203);
+  else if (colorName == "cyan") return strip.Color(0, 255, 255);
+  else if (colorName == "white") return strip.Color(255, 255, 255);
+  else return strip.Color(255, 255, 255); // Default: weiß
 }

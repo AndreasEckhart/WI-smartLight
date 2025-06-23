@@ -204,12 +204,17 @@ void saveConfig() {
   
   preferences.putBool("wifi_enabled", wifi_enabled);
   preferences.putString("wifi_ssid", wifi_ssid);
-  preferences.putString("wifi_pass", wifi_password);
+  if (wifi_password.length() > 0) {
+    preferences.putString("wifi_pass", wifi_password);
+  }
   
   preferences.putString("mqtt_server", mqtt_server);
   preferences.putInt("mqtt_port", mqtt_port);
   preferences.putString("mqtt_user", mqtt_user);
-  preferences.putString("mqtt_pass", mqtt_password);
+  if (mqtt_password.length() > 0) {
+    preferences.putString("mqtt_pass", mqtt_password);
+  }
+
   preferences.putString("mqtt_topic", mqtt_topic);
   preferences.putBool("mqtt_enabled", mqtt_enabled);
   
@@ -584,6 +589,7 @@ void handleJS() {
 void handleStatus() {
   JsonDocument doc;
   doc["chip_id"] = getChipId();
+  doc["uptime"] = millis() / 1000; // Uptime in Sekunden
   doc["mode"] = ap_mode ? "Access Point" : "Station";
   doc["ip"] = ap_mode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
   doc["wifi_status"] = ap_mode ? "AP Mode" : (WiFi.status() == WL_CONNECTED ? "Verbunden" : "Getrennt");
@@ -658,6 +664,7 @@ void handleMQTTConfig() {
   mqtt_topic = doc["topic"].as<String>();
   
   saveConfig();
+  loadConfig(); // Konfiguration neu laden
   
   // MQTT neu initialisieren wenn aktiviert
   if (mqtt_enabled && !ap_mode) {

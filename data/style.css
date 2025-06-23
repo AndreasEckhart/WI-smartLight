@@ -6,7 +6,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+    background: linear-gradient(to bottom, #E0B028 0%, #ECBF3E 100%);
     min-height: 100vh;
     padding: 20px;
 }
@@ -46,7 +47,7 @@ h1 {
 }
 
 .accordion-header {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, #f8efd6 0%, #ECBF3E 100%);
     padding: 20px;
     cursor: pointer;
     display: flex;
@@ -56,7 +57,7 @@ h1 {
 }
 
 .accordion-header:hover {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    background: linear-gradient(135deg, #f9f2dc 0%, #f9e6b0 100%);
 }
 
 .accordion-header h2 {
@@ -90,13 +91,23 @@ h1 {
     gap: 15px;
 }
 
+.status-category {
+    grid-column: 1 / -1; /* Span across all columns */
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #333;
+    margin: 15px 0 0px;
+    padding-bottom: 0px;
+    /* border-bottom: 2px solid #e0e0e0; */
+}
+
 .status-item {
     display: flex;
     justify-content: space-between;
     padding: 10px;
     background: #f8f9fa;
     border-radius: 8px;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid #ECBF3E;
 }
 
 .status-item.auto-mode {
@@ -137,7 +148,7 @@ h1 {
 .form-group input:focus, 
 .form-group select:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #E0B028;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
@@ -186,6 +197,45 @@ s.form-group input:disabled,
     transform: none;
 }
 
+.password-group {
+    position: relative;
+    display: flex;    
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    color: #666;
+    font-size: 16px;
+}
+
+.toggle-password:hover {
+    color: #fff;
+}
+
+.toggle-password .eye-slash-icon {
+    display: none;
+}
+
+.toggle-password.active .eye-icon {
+    display: none;
+}
+
+.toggle-password.active .eye-slash-icon {
+    display: inline;
+}
+
+.form-group input[type="password"],
+.form-group input[type="text"] {
+    padding-right: 40px; /* Space for the eye icon */
+}
+
 .checkbox-label {
     display: flex !important;
     align-items: center;
@@ -209,7 +259,7 @@ s.form-group input:disabled,
     flex: 1;
     height: 8px;
     border-radius: 5px;
-    background: #ddd;
+    background: #efefef;
     outline: none;
     opacity: 0.7;
     transition: opacity 0.2s;
@@ -224,7 +274,8 @@ s.form-group input:disabled,
     appearance: none;
     width: 20px;
     height: 20px;
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    /* background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); */
+    background: linear-gradient(135deg, #E0B028 0%, #ECBF3E 100%);
     cursor: pointer;
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
@@ -354,24 +405,32 @@ button[type="submit"]:hover {
 }
 
 .message {
-    margin-top: 20px;
-    padding: 15px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px 30px;
     border-radius: 8px;
-    text-align: center;
-    font-weight: 600;
+    font-weight: 700; /* Increased for better readability */
+    color: #1a1a1a; /* Darker, near-black for high contrast */
+    z-index: 1002;
     display: none;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: #ffffff; /* Solid white for clarity */
 }
 
 .message.success {
     background: #d4edda;
     border: 1px solid #c3e6cb;
-    color: #155724;
+    color: #28a745;
 }
 
 .message.error {
     background: #f8d7da;
     border: 1px solid #f5c6cb;
-    color: #721c24;
+    color: #ee3649;
 }
 
 .message.show {
@@ -379,9 +438,52 @@ button[type="submit"]:hover {
     animation: fadeIn 0.3s ease;
 }
 
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1001; /* Below message but above content */
+    display: none;
+}
+
+.overlay.active {
+    display: block;
+}
+
+.main-content.disabled {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+footer {
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 30px;
+    color: #333;
+    font-size: 0.9em;
+}
+
+footer p {
+    margin: 0;
+}
+
+footer a {
+    color: #E0B028;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: #E0B028;
+    text-decoration: underline;
 }
 
 /* Responsive Design */

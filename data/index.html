@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Konfiguration</title>
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <title>WI-smartLight</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>ESP32 Konfiguration</h1>
-        
-        <div class="accordion">
+    <div id="message" class="message"></div>
+    <div class="overlay" id="overlay"></div>
+    <div class="main-content" id="mainContent">
+        <div class="container">
+            <h1>WI-smartLight</h1>
+
+            <div class="accordion">
             <div class="accordion-item">
                 <div class="accordion-header" onclick="toggleAccordion('status')">
                     <h2>System Status</h2>
@@ -18,10 +21,16 @@
                 </div>
                 <div class="accordion-content" id="status">
                     <div class="status-grid">
+                        <h3 class="status-category">System</h3>
                         <div class="status-item">
                             <span class="status-label">Chip ID:</span>
                             <span id="chipId">-</span>
                         </div>
+                        <div class="status-item">
+                            <span class="status-label">Uptime:</span>
+                            <span id="uptime">-</span>
+                        </div>
+                        <h3 class="status-category">Netzwerk</h3>
                         <div class="status-item">
                             <span class="status-label">Modus:</span>
                             <span id="mode">-</span>
@@ -38,7 +47,7 @@
                             <span class="status-label">MQTT Status:</span>
                             <span id="mqttStatus">-</span>
                         </div>
-                        <br>
+                        <h3 class="status-category">LED Effekte</h3>
                         <div class="status-item">
                             <span class="status-label">Aktueller Effekt:</span>
                             <span id="currentEffect">-</span>
@@ -78,7 +87,19 @@
                         <div id="wifiList" class="wifi-list"></div>
                         <div class="form-group">
                             <label for="password">Passwort:</label>
-                            <input type="password" id="password" name="password">
+                            <div class="input-group password-group">
+                                <input type="password" id="password" name="password">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password')">
+                                    <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-slash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <button type="submit">WLAN konfigurieren</button>
                     </form>
@@ -112,7 +133,19 @@
                         </div>
                         <div class="form-group">
                             <label for="mqttPassword">Passwort (optional):</label>
-                            <input type="password" id="mqttPassword" name="password">
+                            <div class="input-group password-group">
+                                <input type="password" id="mqttPassword" name="password">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('mqttPassword')">
+                                    <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-slash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="mqttTopic">Topic:</label>
@@ -191,8 +224,11 @@
                 </div>
             </div>
         </div>
-        <div id="message" class="message"></div>
+        
+        <footer>
+            <p>WI-smartLight v1.0.0<br>© <script>document.write(new Date().getFullYear())</script> <a href="https://htlinn.ac.at/ausbildung/wirtschaftsingenieure-informatik" target="_blank">HTL-Anichstrasse / Wirtschaftsingenieure - Betriebsinformatik</a></p>
+        </footer>
     </div>
-    <script src="/script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

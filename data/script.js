@@ -14,7 +14,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Checkbox change listeners für Input-Felder aktivieren/deaktivieren
     document.getElementById('wifiEnabled').addEventListener('change', toggleWifiInputs);
     document.getElementById('mqttEnabled').addEventListener('change', toggleMqttInputs);
+
+    // Ensure toggle buttons reflect initial state
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        const inputId = button.getAttribute('onclick').match(/'([^']+)'/)[1];
+        const input = document.getElementById(inputId);
+        if (input.type === 'text') {
+            button.classList.add('active');
+        }
+    });
 });
+
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    const button = input.nextElementSibling;
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.classList.add('active');
+    } else {
+        input.type = 'password';
+        button.classList.remove('active');
+    }
+}
 
 function toggleWifiInputs() {
     const enabled = document.getElementById('wifiEnabled').checked;
@@ -22,7 +43,8 @@ function toggleWifiInputs() {
     const scanButton = document.querySelector('button[onclick="scanWiFi()"]');
     
     inputs.forEach(id => {
-        document.getElementById(id).disabled = !enabled;
+        //document.getElementById(id).disabled = !enabled;
+        document.getElementById(id).readOnly = !enabled;
     });
     scanButton.disabled = !enabled;
 }
@@ -32,7 +54,8 @@ function toggleMqttInputs() {
     const inputs = ['mqttServer', 'mqttPort', 'mqttUser', 'mqttPassword', 'mqttTopic'];
     
     inputs.forEach(id => {
-        document.getElementById(id).disabled = !enabled;
+        //document.getElementById(id).disabled = !enabled;
+        document.getElementById(id).readOnly = !enabled;
     });
 }
 
@@ -68,6 +91,7 @@ async function loadStatus() {
         const data = await response.json();
         
         document.getElementById('chipId').textContent = data.chip_id;
+        document.getElementById('uptime').textContent = formatUptime(data.uptime) || '-';
         document.getElementById('mode').textContent = data.mode;
         document.getElementById('ip').textContent = data.ip;
         document.getElementById('wifiStatus').textContent = data.wifi_status;
@@ -301,7 +325,7 @@ async function handleWiFiSubmit(e) {
         const result = await response.json();
         
         if (result.success) {
-            showMessage('WLAN-Konfiguration gespeichert. ESP wird neu gestartet...', 'success');
+            showMessage('WLAN-Konfiguration gespeichert. smartLight wird neu gestartet...', 'success');
             setTimeout(() => {
                 if (data.ssid) {
                     //window.location.href = 'http://smartlight.local';
@@ -377,7 +401,7 @@ async function changeEffect() {
 }
 
 async function resetConfig() {
-    if (!confirm('Sind Sie sicher, dass Sie die gesamte Konfiguration löschen möchten? Der ESP wird neu gestartet.')) {
+    if (!confirm('Sind Sie sicher, dass Sie die gesamte Konfiguration löschen möchten? smartLight wird neu gestartet.')) {
         return;
     }
     
@@ -389,7 +413,7 @@ async function resetConfig() {
         const result = await response.json();
         
         if (result.success) {
-            showMessage('Konfiguration gelöscht. ESP wird neu gestartet...', 'success');
+            showMessage('Konfiguration gelöscht. smartLight wird neu gestartet...', 'success');
             setTimeout(() => {
                 window.location.reload();
             }, 3000);
@@ -403,10 +427,34 @@ async function resetConfig() {
 
 function showMessage(text, type) {
     const messageDiv = document.getElementById('message');
+    const overlay = document.getElementById('overlay');
+    const mainContent = document.getElementById('mainContent');
+    
     messageDiv.textContent = text;
     messageDiv.className = `message ${type} show`;
+    overlay.classList.add('active');
+    mainContent.classList.add('disabled');
     
     setTimeout(() => {
         messageDiv.classList.remove('show');
-    }, 5000);
+        overlay.classList.remove('active');
+        mainContent.classList.remove('disabled');
+    }, 3000);
+}
+
+function formatUptime(seconds) {
+    if (!seconds || seconds < 0) return 'Unbekannt';
+    
+    const days = Math.floor(seconds / (24 * 3600));
+    seconds %= (24 * 3600);
+    const hours = Math.floor(seconds / 3600);
+    seconds %= 3600;
+    const minutes = Math.floor(seconds / 60);
+    
+    let result = [];
+    if (days > 0) result.push(`${days} Tag${days !== 1 ? 'e' : ''}`);
+    if (hours > 0) result.push(`${hours} Stunde${hours !== 1 ? 'n' : ''}`);
+    if (minutes > 0 || result.length === 0) result.push(`${minutes} Minute${minutes !== 1 ? 'n' : ''}`);
+    
+    return result.join(', ');
 }

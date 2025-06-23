@@ -1,8 +1,10 @@
 // TODO: 
 // OTA updates
 // README.md aktualisieren
+// add change password to web interface
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <LittleFS.h>
@@ -24,7 +26,7 @@ const char* http_password = "admin";
 
 // WiFi und Server
 WebServer server(80);
-WiFiClient wifiClient;
+WiFiClientSecure wifiClient;
 PubSubClient mqttClient(wifiClient);
 Preferences preferences;
 
@@ -32,10 +34,12 @@ Preferences preferences;
 Adafruit_NeoPixel strip(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 // Konfigurationsvariablen
+bool wifi_enabled = false;
 String wifi_ssid = "";
 String wifi_password = "";
+String hostname = "smartlight";
 bool ap_mode = false;
-String ap_ssid = "ESP32-Config";
+String ap_ssid = hostname + "-Config";
 String ap_password = "12345678";
 
 String mqtt_server = "";
@@ -131,11 +135,9 @@ void setup() {
   startWiFi();
   
   // mDNS starten
-  if (!ap_mode) {
-    if (MDNS.begin("esp32-config")) {
-      Serial.println("mDNS responder started");
-      MDNS.addService("http", "tcp", 80);
-    }
+  if (MDNS.begin(hostname)) {
+    Serial.println("mDNS responder started");
+    MDNS.addService("http", "tcp", 80);
   }
   
   // Webserver starten
@@ -171,6 +173,7 @@ void loop() {
 void loadConfig() {
   preferences.begin("config", false);
   
+  wifi_enabled = preferences.getBool("wifi_enabled", false);
   wifi_ssid = preferences.getString("wifi_ssid", "");
   wifi_password = preferences.getString("wifi_pass", "");
   
@@ -199,6 +202,7 @@ void loadConfig() {
 void saveConfig() {
   preferences.begin("config", false);
   
+  preferences.putBool("wifi_enabled", wifi_enabled);
   preferences.putString("wifi_ssid", wifi_ssid);
   preferences.putString("wifi_pass", wifi_password);
   
@@ -222,6 +226,7 @@ void clearConfig() {
   preferences.end();
   
   // Reset zu Standardwerten
+  wifi_enabled = false;
   wifi_ssid = "";
   wifi_password = "";
   mqtt_server = "";
@@ -239,31 +244,38 @@ void clearConfig() {
 }
 
 void startWiFi() {
-  if (wifi_ssid.length() > 0) {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
-    
-    Serial.print("Connecting to WiFi");
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-      delay(1000);
-      Serial.print(".");
-      attempts++;
-    }
-    
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println();
-      Serial.print("Connected! IP: ");
-      Serial.println(WiFi.localIP());
-      ap_mode = false;
+  if(!wifi_enabled) {
+    Serial.println("WiFi is disabled, starting in AP mode");
+    startAPMode();
+    return;
+  } else {
+    Serial.println("WiFi is enabled, attempting to connect");
+    if (wifi_ssid.length() > 0) {
+      WiFi.mode(WIFI_STA);
+      WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
+      
+      Serial.print("Connecting to WiFi");
+      int attempts = 0;
+      while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+        delay(1000);
+        Serial.print(".");
+        attempts++;
+      }
+      
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println();
+        Serial.print("Connected! IP: ");
+        Serial.println(WiFi.localIP());
+        ap_mode = false;
+      } else {
+        Serial.println();
+        Serial.println("WiFi connection failed, starting AP mode");
+        startAPMode();
+      }
     } else {
-      Serial.println();
-      Serial.println("WiFi connection failed, starting AP mode");
+      Serial.println("No WiFi credentials, starting AP mode");
       startAPMode();
     }
-  } else {
-    Serial.println("No WiFi credentials, starting AP mode");
-    startAPMode();
   }
 }
 
@@ -297,6 +309,7 @@ void setupWebServer() {
 
 void setupMQTT() {
   if (mqtt_server.length() > 0) {
+    wifiClient.setInsecure(); // Use this only for testing, it allows connecting without a root certificate
     mqttClient.setServer(mqtt_server.c_str(), mqtt_port);
     reconnectMQTT();
   }
@@ -519,6 +532,8 @@ void printStatus() {
   Serial.println(String(ESP.getEfuseMac(), HEX));
   Serial.print("Mode: ");
   Serial.println(ap_mode ? "Access Point" : "Station");
+  Serial.print("WiFi: ");
+  Serial.println(wifi_enabled ? "Enabled" : "Disabled");
   Serial.print("IP: ");
   Serial.println(ap_mode ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
   Serial.print("MQTT: ");
@@ -568,13 +583,13 @@ void handleJS() {
 
 void handleStatus() {
   JsonDocument doc;
-  
   doc["chip_id"] = getChipId();
   doc["mode"] = ap_mode ? "Access Point" : "Station";
   doc["ip"] = ap_mode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
   doc["wifi_status"] = ap_mode ? "AP Mode" : (WiFi.status() == WL_CONNECTED ? "Verbunden" : "Getrennt");
   doc["mqtt_status"] = mqtt_enabled ? (mqttClient.connected() ? "Verbunden" : "Getrennt") : "Deaktiviert";
   doc["current_effect"] = getEffectName(currentEffect);
+  doc["wifi_enabled"] = wifi_enabled;
   doc["wifi_ssid"] = wifi_ssid;
   doc["mqtt_enabled"] = mqtt_enabled;
   doc["mqtt_server"] = mqtt_server;
@@ -612,6 +627,7 @@ void handleWiFiConfig() {
   JsonDocument doc;
   deserializeJson(doc, server.arg("plain"));
   
+  wifi_enabled = doc["enabled"];
   wifi_ssid = doc["ssid"].as<String>();
   wifi_password = doc["password"].as<String>();
   

@@ -1,6 +1,7 @@
 let statusInterval;
 let brightnessTimeout;
 let wechselzeitTimeout;
+let initialLoad = true;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadStatus();
@@ -10,7 +11,30 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('wifiForm').addEventListener('submit', handleWiFiSubmit);
     document.getElementById('mqttForm').addEventListener('submit', handleMQTTSubmit);
 
+    // Checkbox change listeners für Input-Felder aktivieren/deaktivieren
+    document.getElementById('wifiEnabled').addEventListener('change', toggleWifiInputs);
+    document.getElementById('mqttEnabled').addEventListener('change', toggleMqttInputs);
 });
+
+function toggleWifiInputs() {
+    const enabled = document.getElementById('wifiEnabled').checked;
+    const inputs = ['ssid', 'password'];
+    const scanButton = document.querySelector('button[onclick="scanWiFi()"]');
+    
+    inputs.forEach(id => {
+        document.getElementById(id).disabled = !enabled;
+    });
+    scanButton.disabled = !enabled;
+}
+
+function toggleMqttInputs() {
+    const enabled = document.getElementById('mqttEnabled').checked;
+    const inputs = ['mqttServer', 'mqttPort', 'mqttUser', 'mqttPassword', 'mqttTopic'];
+    
+    inputs.forEach(id => {
+        document.getElementById(id).disabled = !enabled;
+    });
+}
 
 function toggleAccordion(id) {
     const content = document.getElementById(id);
@@ -65,13 +89,22 @@ async function loadStatus() {
             wechselzeitStatus.classList.remove('show');
         }
 
-        // Update form values
-        document.getElementById('ssid').value = data.wifi_ssid || '';
-        document.getElementById('mqttEnabled').checked = data.mqtt_enabled;
-        document.getElementById('mqttServer').value = data.mqtt_server || '';
-        document.getElementById('mqttPort').value = data.mqtt_port || 8883;
-        document.getElementById('mqttUser').value = data.mqtt_user || '';
-        document.getElementById('mqttTopic').value = data.mqtt_topic || 'esp32/status';
+        // Update WiFi and MQTT settings only on initial load
+        if (initialLoad) {
+            document.getElementById('wifiEnabled').checked = data.wifi_enabled;
+            document.getElementById('mqttEnabled').checked = data.mqtt_enabled;
+            document.getElementById('ssid').value = data.wifi_ssid || '';
+            document.getElementById('mqttServer').value = data.mqtt_server || '';
+            document.getElementById('mqttPort').value = data.mqtt_port || 8883;
+            document.getElementById('mqttUser').value = data.mqtt_user || '';
+            document.getElementById('mqttTopic').value = data.mqtt_topic || 'esp32/status';
+            // Activate/deactivate input fields based on checkbox state
+            toggleWifiInputs();
+            toggleMqttInputs();
+            initialLoad = false;
+        }
+        
+        // Update effect selection normally
         document.getElementById('effectSelect').value = data.effect || 0;
         
         // Show/hide wechselzeit container based on current effect
@@ -251,6 +284,7 @@ async function handleWiFiSubmit(e) {
     
     const formData = new FormData(e.target);
     const data = {
+        enabled: formData.get('enabled') === 'on',
         ssid: formData.get('ssid'),
         password: formData.get('password')
     };
@@ -270,7 +304,8 @@ async function handleWiFiSubmit(e) {
             showMessage('WLAN-Konfiguration gespeichert. ESP wird neu gestartet...', 'success');
             setTimeout(() => {
                 if (data.ssid) {
-                    window.location.href = 'http://esp32-config.local';
+                    //window.location.href = 'http://smartlight.local';
+                    window.location.href = window.location.pathname;
                 }
             }, 3000);
         } else {

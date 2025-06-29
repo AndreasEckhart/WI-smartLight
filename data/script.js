@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('wifiEnabled').addEventListener('change', toggleWifiInputs);
     document.getElementById('mqttEnabled').addEventListener('change', toggleMqttInputs);
 
+    // Passwort ändern
+    document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
+
     // Ensure toggle buttons reflect initial state
     document.querySelectorAll('.toggle-password').forEach(button => {
         const inputId = button.getAttribute('onclick').match(/'([^']+)'/)[1];
@@ -24,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
 
 function togglePasswordVisibility(inputId) {
     const input = document.getElementById(inputId);
@@ -99,6 +103,7 @@ async function loadStatus() {
         document.getElementById('currentEffect').textContent = data.current_effect;
         document.getElementById('currentBrightness').textContent = data.brightness || '-';
         document.getElementById('currentWechselzeit').textContent = formatTime(data.auto_timer) || '-';
+        document.getElementById('version').textContent = data.version || '-'; // Replace with actual version if available
 
         // Show/hide wechselzeit in status based on current effect
         const wechselzeitStatus = document.getElementById('currentWechselzeitStatus');
@@ -122,6 +127,7 @@ async function loadStatus() {
             document.getElementById('mqttPort').value = data.mqtt_port || 8883;
             document.getElementById('mqttUser').value = data.mqtt_user || '';
             document.getElementById('mqttTopic').value = data.mqtt_topic || 'esp32/status';
+
             // Activate/deactivate input fields based on checkbox state
             toggleWifiInputs();
             toggleMqttInputs();
@@ -457,4 +463,75 @@ function formatUptime(seconds) {
     if (minutes > 0 || result.length === 0) result.push(`${minutes} Minute${minutes !== 1 ? 'n' : ''}`);
     
     return result.join(', ');
+}
+
+async function handlePasswordSubmit(e) {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Passwort-Validierung
+    if (newPassword !== confirmPassword) {
+        showMessage('Die neuen Passwörter stimmen nicht überein', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showMessage('Das neue Passwort muss mindestens 6 Zeichen lang sein', 'error');
+        return;
+    }
+    
+    const data = {
+        currentPassword: currentPassword,
+        newPassword: newPassword
+    };
+    
+    try {
+        const response = await fetch('/api/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage('Passwort erfolgreich geändert', 'success');
+            document.getElementById('passwordForm').reset();
+        } else {
+            showMessage(result.message || 'Fehler beim Ändern des Passworts', 'error');
+        }
+    } catch (error) {
+        showMessage('Verbindungsfehler beim Ändern des Passworts', 'error');
+    }
+}
+
+// Neue Funktion: Abmelden
+async function logout() {
+    if (!confirm('Möchten Sie sich wirklich abmelden?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/logout', {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage('Erfolgreich abgemeldet', 'success');
+            setTimeout(() => {
+                window.location.href = '/'; // Redirect to home page
+            }, 1500);
+        } else {
+            showMessage('Fehler beim Abmelden', 'error');
+        }
+    } catch (error) {
+        showMessage('Verbindungsfehler beim Abmelden', 'error');
+    }
 }

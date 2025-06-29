@@ -3,6 +3,19 @@
 // README.md aktualisieren
 // add change password to web interface
 
+/***********************************************************************************
+*                           _   _     _       _     _   
+*  ___ _ __ ___   __ _ _ __| |_| |   (_) __ _| |__ | |_ 
+* / __| '_ ` _ \ / _` | '__| __| |   | |/ _` | '_ \| __|
+* \__ \ | | | | | (_| | |  | |_| |___| | (_| | | | | |_ 
+* |___/_| |_| |_|\__,_|_|   \__|_____|_|\__, |_| |_|\__|
+*                                       |___/           
+*
+*  ESP32 LED Controller mit Webinterface und MQTT
+*  HTL-Anichstrasse, Innsbruck
+*  Wirtschaftsingenieure - Betriebsinformatik / (c)2025 Andreas Eckhart
+***********************************************************************************/
+
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WebServer.h>
@@ -19,6 +32,7 @@
 #define BRIGHTNESS  20    // Standard Neopixel Helligkeit (0-100)
 #define STATUS_LED_PIN 2
 #define BUTTON_PIN 9
+#define PRODUCT_VERSION "1.0.0"
 
 // Authentifizierungsdaten (hardcoded)
 const char* http_username = "admin";
@@ -41,6 +55,7 @@ String hostname = "smartlight";
 bool ap_mode = false;
 String ap_ssid = hostname + "-Config";
 String ap_password = "12345678";
+String currentVersion = PRODUCT_VERSION;
 
 String mqtt_server = "";
 int mqtt_port = 8883;
@@ -58,14 +73,13 @@ bool autoMode = false;
 unsigned long autoModeTimer = 0;
 int autoModeIndex = 0;
 int currentAutoTimer = 30;
+unsigned long fingerModeTimer = 0;
 
 // Button
 bool buttonPressed = false;
 unsigned long buttonPressStart = 0;
 unsigned long lastButtonChange = 0;
 bool lastButtonState = true;
-unsigned long lastDebounceTime = 0;
-const unsigned long debounceDelay = 50;
 
 // Status LED
 bool statusLedState = false;
@@ -110,6 +124,7 @@ void handleEffectConfig();
 void handleBrightness();
 void handleAutoTimer();
 void handleReset();
+void handleLogout();
 void handleNotFound();
 String getEffectName(int effect);
 String getChipId();
@@ -120,7 +135,7 @@ int parseColor(String colorName);
 void setup() {
   Serial.begin(115200);
   delay(3000); // Wartezeit für serielle Verbindung
-  Serial.println("Starting ESP32 LED Controller");
+  Serial.println("Starting smartLight Controller");
   
   // Hardware initialisieren
   pinMode(STATUS_LED_PIN, OUTPUT);
@@ -316,7 +331,8 @@ void setupWebServer() {
   server.on("/api/brightness", HTTP_POST, handleBrightness);
   server.on("/api/auto-timer", HTTP_POST, handleAutoTimer);
   server.on("/api/reset", HTTP_POST, handleReset);
-
+  server.on("/api/logout", HTTP_POST, handleLogout);
+  
   server.onNotFound(handleNotFound);
 }
 
@@ -360,9 +376,10 @@ void publishStatus() {
   if (mqttClient.connected()) {
     JsonDocument doc;
     doc["chip_id"] = getChipId();
+    doc["version"] = currentVersion;
     doc["ip"] = ap_mode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
     doc["effect"] = currentEffect;
-    doc["uptime"] = millis();
+    doc["uptime"] = millis() / 1000; // Uptime in Sekunden
     
     String payload;
     serializeJson(doc, payload);
@@ -479,6 +496,11 @@ void updateNeoPixels() {
   // Finger-Modus hat Priorität
   if (fingerMode) {
     fingerLedEffect();
+    if (fingerModeTimer == 0) fingerModeTimer = millis();
+    if (millis() - fingerModeTimer > 5000) { // fingerMode nach 5s beenden
+      fingerMode = false;
+      fingerModeTimer = 0;
+    }
   } else if (autoMode) {
     // Auto-Modus: alle Effekte nacheinander
     if (millis() - autoModeTimer > currentAutoTimer * 1000) { // konfigurierte Wechelzeit pro Effekt
@@ -605,6 +627,8 @@ void printStatus() {
   Serial.println(mqtt_enabled ? "Enabled" : "Disabled");
   Serial.print("Effect: ");
   Serial.println(currentEffect);
+  Serial.print("Version: ");
+  Serial.println(currentVersion);
   Serial.println("==================");
 }
 
@@ -665,6 +689,7 @@ void handleStatus() {
   doc["effect"] = currentEffect;
   doc["brightness"] = currentBrightness;
   doc["auto_timer"] = currentAutoTimer;
+  doc["version"] = currentVersion;
   
   String response;
   serializeJson(doc, response);
@@ -823,6 +848,23 @@ void handleReset() {
   // Restart nach kurzer Verzögerung
   delay(1000);
   ESP.restart();
+}
+
+void handleLogout() {
+  JsonDocument response;
+  // Erfolgreiche Abmeldung - 401 senden um Browser-Credentials zu löschen
+  response["success"] = true;
+  response["message"] = "Erfolgreich abgemeldet";
+  
+  String responseStr;
+  serializeJson(response, responseStr);
+
+  Serial.println("Benutzer erfolgreich abgemeldet");
+  String www_realm = "ESP32 LED Controller";
+
+  // 401 Unauthorized senden um Browser zum Löschen der Credentials zu zwingen
+  server.sendHeader("WWW-Authenticate", "Basic realm=\"" + String(www_realm) + "\"");
+  server.send(401, "application/json", responseStr);
 }
 
 void handleNotFound() {

@@ -132,6 +132,7 @@ void handleReset();
 void handleLogout();
 void handleNotFound();
 void handleStatusLed();
+void handleFavicon();
 String getEffectName(int effect);
 String getChipId();
 bool webAuthenticate();
@@ -325,12 +326,15 @@ void checkWiFi() {
       lastWiFiCheck = millis();
 
       if (WiFi.status() != WL_CONNECTED) {
+        onlineStatus = false;
         Serial.println("WiFi disconnected, attempting to reconnect");
         WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
         if (WiFi.status() == WL_CONNECTED) {
           Serial.println("WiFi reconnected");
           onlineStatus = true;
         }
+      } else {
+        onlineStatus = true; // Setze Online-Status auf true, wenn verbunden
       }
     }
   }
@@ -353,6 +357,7 @@ void setupWebServer() {
   server.on("/", HTTP_GET, handleRoot);
   server.on("/style.css", handleCSS);
   server.on("/script.js", handleJS);
+  server.on("/favicon.ico", handleFavicon);
   
   // API Endpoints
   server.on("/api/status", HTTP_GET, handleStatus);
@@ -930,7 +935,23 @@ void handleLogout() {
 }
 
 void handleNotFound() {
-  server.send(404, "text/plain", "File Not Found");
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+  Serial.println(message);
+  server.send(404, "text/plain", message);
+}
+
+void handleFavicon() {
+  server.send(204);
 }
 
 String getEffectName(int effect) {

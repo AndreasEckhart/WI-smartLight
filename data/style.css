@@ -322,10 +322,10 @@ s.form-group input:disabled,
     display: none;
     transition: all 0.3s ease;
     margin-bottom: 20px;
-    padding: 15px;
+/*    padding: 15px;
     background: rgba(0, 123, 255, 0.05);
     border: 1px solid rgba(0, 123, 255, 0.1);
-    border-radius: 8px;
+    border-radius: 8px; */
 }
 
 .wechselzeit-container.show {
@@ -339,6 +339,11 @@ s.form-group input:disabled,
 
 .wifi-list {
     margin: 15px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 5px;
 }
 
 .wifi-item {

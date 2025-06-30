@@ -131,6 +131,7 @@ async function loadStatus() {
             // Activate/deactivate input fields based on checkbox state
             toggleWifiInputs();
             toggleMqttInputs();
+            document.getElementById('statusLedEnabled').checked = data.led_enabled;
             initialLoad = false;
         }
         
@@ -257,10 +258,14 @@ async function setWechselzeit(value) {
         });
         
         const result = await response.json();
-        
-        if (!result.success) {
+
+        if (result.success) {
+            showMessage('Wechselzeit geändert', 'success');
+            loadStatus();
+        } else {
             showMessage('Fehler beim Ändern der Wechselzeit', 'error');
         }
+
     } catch (error) {
         console.error('Error setting wechselzeit:', error);
         showMessage('Verbindungsfehler beim Ändern der Wechselzeit', 'error');
@@ -400,6 +405,30 @@ async function changeEffect() {
             loadStatus();
         } else {
             showMessage('Fehler beim Ändern des Effekts', 'error');
+        }
+    } catch (error) {
+        showMessage('Verbindungsfehler', 'error');
+    }
+}
+
+async function toggleStatusLed() {
+    const enabled = document.getElementById('statusLedEnabled').checked;
+    
+    try {
+        const response = await fetch('/api/status-led', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ enabled: enabled })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage('Status-LED geändert', 'success');
+        } else {
+            showMessage('Fehler beim Ändern der Status-LED', 'error');
         }
     } catch (error) {
         showMessage('Verbindungsfehler', 'error');

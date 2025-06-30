@@ -1,7 +1,7 @@
 // TODO: 
 // OTA updates
+// Passwort ändern
 // README.md aktualisieren
-// add change password to web interface
 
 /***********************************************************************************
 *                           _   _     _       _     _   
@@ -33,6 +33,7 @@
 #define STATUS_LED_PIN 2
 #define BUTTON_PIN 9
 #define PRODUCT_VERSION "1.0.0"
+const String yourName = "Andi";
 
 // Authentifizierungsdaten (hardcoded)
 const char* http_username = "admin";
@@ -53,7 +54,7 @@ String wifi_ssid = "";
 String wifi_password = "";
 String hostname = "smartlight";
 bool ap_mode = false;
-String ap_ssid = hostname + "-Config";
+String ap_ssid = hostname + "-Config-" + yourName;
 String ap_password = "12345678";
 String currentVersion = PRODUCT_VERSION;
 
@@ -84,17 +85,21 @@ bool lastButtonState = true;
 // Status LED
 bool statusLedState = false;
 unsigned long statusLedTimer = 0;
+bool statusLedEnabled = true;
 
 // MQTT finger count application
 int fingerCount = 0;
 String fingerColor = "blue";
 bool fingerMode = false;
+unsigned long lastWiFiCheck = 0;
+bool onlineStatus = false;
 
 // Funktionen Prototypen
 void loadConfig();
 void saveConfig();
 void clearConfig();
 void startWiFi();
+void checkWiFi();
 void startAPMode();
 void setupWebServer();
 void setupMQTT();
@@ -126,6 +131,7 @@ void handleAutoTimer();
 void handleReset();
 void handleLogout();
 void handleNotFound();
+void handleStatusLed();
 String getEffectName(int effect);
 String getChipId();
 bool webAuthenticate();
@@ -182,15 +188,9 @@ void loop() {
   handleButton();
   updateStatusLED();
   updateNeoPixels();
+  checkWiFi();
   
-  if (mqtt_enabled && !ap_mode) {
-    if (!mqttClient.connected()) {
-      reconnectMQTT();
-    }
-    mqttClient.loop();
-  }
-  
-  delay(10);
+  delay(5); // Kurze Pause, um die CPU nicht zu überlasten
 }
 
 void loadConfig() {
@@ -210,6 +210,7 @@ void loadConfig() {
   currentEffect = preferences.getInt("effect", 0);
   currentBrightness = preferences.getInt("brightness", BRIGHTNESS);
   currentAutoTimer = preferences.getInt("auto_timer", 30);
+  statusLedEnabled = preferences.getBool("led_enabled", true);
   
   strip.setBrightness(currentBrightness);
 
@@ -244,6 +245,7 @@ void saveConfig() {
   preferences.putInt("effect", currentEffect);
   preferences.putInt("brightness", currentBrightness);
   preferences.putInt("auto_timer", currentAutoTimer);
+  preferences.putBool("led_enabled", statusLedEnabled);
   
   preferences.end();
 }
@@ -267,13 +269,14 @@ void clearConfig() {
   currentEffect = 0;
   currentBrightness = BRIGHTNESS;
   currentAutoTimer = 30;
+  statusLedEnabled = true;
   
   Serial.println("Configuration cleared");
 }
 
 void startWiFi() {
   if(!wifi_enabled) {
-    Serial.println("WiFi is disabled, starting in AP mode");
+    Serial.println("WiFi is disabled. Starting AP mode");
     startAPMode();
     return;
   } else {
@@ -295,7 +298,9 @@ void startWiFi() {
         Serial.print("Connected! IP: ");
         Serial.println(WiFi.localIP());
         ap_mode = false;
+        onlineStatus = true; // Setze Online-Status auf true, wenn verbunden
       } else {
+        onlineStatus = false; // Setze Online-Status auf false, wenn nicht verbunden
         Serial.println();
         Serial.println("WiFi connection failed, starting AP mode");
         startAPMode();
@@ -307,8 +312,35 @@ void startWiFi() {
   }
 }
 
+void checkWiFi() {
+  if (mqtt_enabled && !ap_mode && onlineStatus) {
+    if (!mqttClient.connected()) {
+      reconnectMQTT();
+    }
+    mqttClient.loop();
+  }
+  
+  if(wifi_enabled) {
+    if (millis() - lastWiFiCheck >= 60000) { // Alle 60 Sekunden prüfen
+      lastWiFiCheck = millis();
+
+      if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("WiFi disconnected, attempting to reconnect");
+        WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
+        if (WiFi.status() == WL_CONNECTED) {
+          Serial.println("WiFi reconnected");
+          onlineStatus = true;
+        }
+      }
+    }
+  }
+
+}
+
 void startAPMode() {
   ap_mode = true;
+  if(wifi_enabled) statusLedEnabled = true; // Status LED immer aktivieren, wenn WiFi aktiviert ist
+
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ap_ssid.c_str(), ap_password.c_str());
   
@@ -330,6 +362,7 @@ void setupWebServer() {
   server.on("/api/effect", HTTP_POST, handleEffectConfig);
   server.on("/api/brightness", HTTP_POST, handleBrightness);
   server.on("/api/auto-timer", HTTP_POST, handleAutoTimer);
+  server.on("/api/status-led", HTTP_POST, handleStatusLed);
   server.on("/api/reset", HTTP_POST, handleReset);
   server.on("/api/logout", HTTP_POST, handleLogout);
   
@@ -352,7 +385,7 @@ void reconnectMQTT() {
   if (millis() - lastAttempt < 5000) return;
   lastAttempt = millis();
   
-  String clientId = "ESP32-" + getChipId();
+  String clientId = "WI-" + getChipId();
   
   bool connected = false;
   if (mqtt_user.length() > 0) {
@@ -480,7 +513,11 @@ void handleButton() {
 }
 
 void updateStatusLED() {
-  unsigned long interval = ap_mode ? 250 : (WiFi.status() == WL_CONNECTED ? 1000 : 100);
+  if (!statusLedEnabled) {
+    digitalWrite(STATUS_LED_PIN, LOW); // LED aus, wenn deaktiviert
+    return;
+  }
+  unsigned long interval = ap_mode ? 500 : (WiFi.status() == WL_CONNECTED ? 1000 : 100);
   
   if (millis() - statusLedTimer >= interval) {
     statusLedState = !statusLedState;
@@ -617,6 +654,8 @@ void printStatus() {
   Serial.println("=== ESP32 Status ===");
   Serial.print("Chip ID: ");
   Serial.println(String(ESP.getEfuseMac(), HEX));
+  Serial.print("Version: ");
+  Serial.println(currentVersion);
   Serial.print("Mode: ");
   Serial.println(ap_mode ? "Access Point" : "Station");
   Serial.print("WiFi: ");
@@ -627,8 +666,8 @@ void printStatus() {
   Serial.println(mqtt_enabled ? "Enabled" : "Disabled");
   Serial.print("Effect: ");
   Serial.println(currentEffect);
-  Serial.print("Version: ");
-  Serial.println(currentVersion);
+  Serial.print("Status-LED: ");
+  Serial.println(statusLedEnabled ? "Enabled" : "Disabled");
   Serial.println("==================");
 }
 
@@ -690,6 +729,7 @@ void handleStatus() {
   doc["brightness"] = currentBrightness;
   doc["auto_timer"] = currentAutoTimer;
   doc["version"] = currentVersion;
+  doc["led_enabled"] = statusLedEnabled;
   
   String response;
   serializeJson(doc, response);
@@ -832,6 +872,22 @@ void handleAutoTimer() {
   } else {
     server.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid auto-timer\"}");
   }
+}
+
+void handleStatusLed() {
+  JsonDocument doc;
+  deserializeJson(doc, server.arg("plain"));
+  
+  statusLedEnabled = doc["enabled"];
+  saveConfig();
+  
+  JsonDocument response;
+  response["success"] = true;
+  response["message"] = "Status LED geändert";
+  
+  String responseStr;
+  serializeJson(response, responseStr);
+  server.send(200, "application/json", responseStr);
 }
 
 void handleReset() {

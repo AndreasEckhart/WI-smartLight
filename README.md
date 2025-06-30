@@ -33,7 +33,7 @@ Dieses Projekt ist ein multifunktionaler LED-Controller, der auf einem ESP32 bas
 
 1.  **Stromversorgung:** Schließen Sie den ESP32 an eine Stromquelle an.
 2.  **Access Point (AP)-Modus:** Beim ersten Start oder wenn keine WLAN-Verbindung konfiguriert ist, startet der ESP32 im AP-Modus.
-    -   **SSID:** `smartlight-Config-Andi`
+    -   **SSID:** `smartlight-Config-<dein Name>`
     -   **Passwort:** `12345678`
 3.  **Verbinden:** Verbinden Sie sich mit Ihrem Computer oder Smartphone mit diesem WLAN-Netzwerk.
 4.  **Webinterface öffnen:** Öffnen Sie einen Webbrowser und navigieren Sie zu `http://192.168.4.1`.
@@ -45,6 +45,7 @@ Dieses Projekt ist ein multifunktionaler LED-Controller, der auf einem ESP32 bas
 
 ## Webinterface
 
+Auf das integrierte Webninterface kann von jedem beliebigen Engerät (z.B. Laptop, Smartphone) mit einem gewöhnlichen Webbrowser zugegriffen werden (admin / admin). 
 Das Webinterface ist in mehrere Abschnitte unterteilt:
 
 -   **Status:** Zeigt den aktuellen System- und Netzwerkstatus an.

@@ -492,6 +492,12 @@ void handleButton() {
         Serial.println("Reset durch Button ausgelöst");
         clearConfig();
         ESP.restart();
+      } else if (pressDuration > 2000) {
+        // Mittellange Taste gedrückt (>2 Sekunden) = AP-Modus starten
+        Serial.println("AP-Mode durch Button ausgelöst");
+        if (!ap_mode) {
+          startAPMode();
+        }
       } else if (pressDuration > 100) {
         fingerMode = false; // Kurze Taste gedrückt = Finger-Modus deaktivieren
         // Kurze Taste gedrückt = LED Effekt wechseln

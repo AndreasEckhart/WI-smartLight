@@ -137,7 +137,7 @@ String getEffectName(int effect);
 String getChipId();
 bool webAuthenticate();
 void fingerLedEffect();
-int parseColor(String colorName);
+uint32_t hexToNeoPixelColor(const char* hexColor);
 
 void setup() {
   Serial.begin(115200);
@@ -989,7 +989,7 @@ void fingerLedEffect() {
   strip.clear();
   
   if (fingerCount > 0) {
-    uint32_t color = parseColor(fingerColor);
+    uint32_t color = hexToNeoPixelColor(fingerColor.c_str());
     
     for (int finger = 0; finger < fingerCount; finger++) {
       int startPos = finger * 5; // Jeder Finger beginnt bei Position 0, 5, 10, 15, 20
@@ -1006,17 +1006,27 @@ void fingerLedEffect() {
 }
 
 // Hilfsfunktion zum Parsen der Farbe:
-int parseColor(String colorName) {
-  colorName.toLowerCase();
-  
-  if (colorName == "red") return strip.Color(255, 0, 0);
-  else if (colorName == "green") return strip.Color(0, 255, 0);
-  else if (colorName == "blue") return strip.Color(0, 0, 255);
-  else if (colorName == "yellow") return strip.Color(255, 255, 0);
-  else if (colorName == "purple") return strip.Color(128, 0, 128);
-  else if (colorName == "orange") return strip.Color(255, 165, 0);
-  else if (colorName == "pink") return strip.Color(255, 192, 203);
-  else if (colorName == "cyan") return strip.Color(0, 255, 255);
-  else if (colorName == "white") return strip.Color(255, 255, 255);
-  else return strip.Color(255, 255, 255); // Default: weiß
+u_int32_t hexToNeoPixelColor(const char* hexColor) {
+  // Überprüfen auf ungültige Eingabe: Nullzeiger, falsche Länge oder fehlendes '#'-Präfix
+  if (hexColor == nullptr || strlen(hexColor) != 7 || hexColor[0] != '#') {
+    // Ungültiges Eingabeformat, gib ROT zurück (oder eine andere Fehlerfarbe)
+    return strip.Color(255, 0, 0);
+  }
+
+  // Parsen der Hexadezimal-Teile für Rot, Grün, Blau
+  // Erstellen von temporären Zeichenketten für jede Farbkomponente
+  char hexRed[3] = {hexColor[1], hexColor[2], '\0'};    // Zeichen 1 und 2 für Rot
+  char hexGreen[3] = {hexColor[3], hexColor[4], '\0'};  // Zeichen 3 und 4 für Grün
+  char hexBlue[3] = {hexColor[5], hexColor[6], '\0'};   // Zeichen 5 und 6 für Blau
+
+  // Konvertieren der Hex-Teile in Integer-Werte (0-255)
+  // strtol (string to long) wird verwendet, um eine Zeichenkette in eine Zahl umzuwandeln.
+  // Der dritte Parameter '16' gibt an, dass die Basis Hexadezimal ist.
+  uint8_t r = strtol(hexRed, nullptr, 16);
+  uint8_t g = strtol(hexGreen, nullptr, 16);
+  uint8_t b = strtol(hexBlue, nullptr, 16);
+
+  // Den kombinierten Farbwert mit strip.Color() zurückgeben
+  // strip.Color() kombiniert die 8-Bit-RGB-Werte zu einem 32-Bit-Farbwert
+  return strip.Color(r, g, b);
 }

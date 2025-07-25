@@ -127,11 +127,11 @@ async function loadStatus() {
             document.getElementById('mqttPort').value = data.mqtt_port || 8883;
             document.getElementById('mqttUser').value = data.mqtt_user || '';
             document.getElementById('mqttTopic').value = data.mqtt_topic || 'esp32/status';
+            document.getElementById('statusLedEnabled').checked = data.led_enabled;
 
             // Activate/deactivate input fields based on checkbox state
             toggleWifiInputs();
             toggleMqttInputs();
-            document.getElementById('statusLedEnabled').checked = data.led_enabled;
             initialLoad = false;
         }
         

@@ -325,6 +325,12 @@ void checkWiFi() {
     if (millis() - lastWiFiCheck >= 60000) { // Alle 60 Sekunden prüfen
       lastWiFiCheck = millis();
 
+      // Prüfen ob AP-Modus aktiv ist
+      if (ap_mode) {
+        Serial.println("AP Mode active, skipping WiFi check");
+        return;
+      }
+      // Prüfen ob WiFi verbunden ist
       if (WiFi.status() != WL_CONNECTED) {
         onlineStatus = false;
         Serial.println("WiFi disconnected, attempting to reconnect");

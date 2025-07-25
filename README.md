@@ -10,14 +10,17 @@ Dieses Projekt ist ein multifunktionaler LED-Controller, der auf einem ESP32 bas
 - [Funktionsumfang](#funktionsumfang)
 - [Erste Schritte](#erste-schritte)
 - [Webinterface](#webinterface)
+- [Status-LED-Indikator](#status-led-indikator)
 - [Tastensteuerung](#tastensteuerung)
 - [MQTT-Steuerung](#mqtt-steuerung)
+- [Zukünftige Funktionen](#zukünftige-funktionen)
 - [Kompilieren aus dem Quellcode](#kompilieren-aus-dem-quellcode)
 
 ## Funktionsumfang
 
-- **Webinterface:** Ein benutzerfreundliches Webinterface zur Konfiguration von WLAN, MQTT und zur Steuerung der LED-Effekte.
+- **Passwortgeschütztes Webinterface:** Ein benutzerfreundliches Webinterface zur Konfiguration und Steuerung, erreichbar über die IP-Adresse des Geräts.
 - **LED-Effekte:** Eine Vielzahl von vordefinierten LED-Effekten, darunter:
+  - **Alle aus**
   - Rainbow
   - Color Wipe
   - Theater Chase
@@ -25,9 +28,12 @@ Dieses Projekt ist ein multifunktionaler LED-Controller, der auf einem ESP32 bas
   - Sparkle
   - Running Light
   - Fire
-  - Auto-Modus (wechselt automatisch zwischen den Effekten)
-- **MQTT-Integration:** Steuerung des Controllers über MQTT. Eine spezielle Funktion namens "Finger-Modus" ermöglicht die Anzeige einer Anzahl von "Fingern" in einer bestimmten Farbe.
-- **Tastensteuerung:** Eine physische Taste ermöglicht die Steuerung der Grundfunktionen ohne Netzwerkverbindung.
+  - **Auto-Modus:** Wechselt automatisch in einem einstellbaren Intervall (in Sekunden) durch die Effekte 1-7.
+- **MQTT-Integration:** Steuerung des Controllers über MQTT. Eine spezielle Funktion namens "Finger-Modus" ermöglicht die Anzeige einer Anzahl von "Fingern" (0-5) in einer benutzerdefinierten Farbe.
+- **Tastensteuerung:** Eine physische Taste ermöglicht die Steuerung der Grundfunktionen (Effektwechsel, AP-Modus starten, Werksreset) ohne Netzwerkverbindung.
+- **Konfigurierbare Status-LED:** Eine Status-LED zeigt den aktuellen Netzwerkstatus an und kann bei Bedarf über das Webinterface deaktiviert werden.
+- **mDNS-Unterstützung:** Einfacher Zugriff auf das Webinterface über `http://smartlight.local`, ohne die IP-Adresse kennen zu müssen.
+- **Persistente Konfiguration:** Alle Einstellungen werden im Flash-Speicher gesichert und bleiben auch nach einem Neustart erhalten.
 
 ## Erste Schritte
 
@@ -45,22 +51,29 @@ Dieses Projekt ist ein multifunktionaler LED-Controller, der auf einem ESP32 bas
 
 ## Webinterface
 
-Auf das integrierte Webninterface kann von jedem beliebigen Engerät (z.B. Laptop, Smartphone) mit einem gewöhnlichen Webbrowser zugegriffen werden (admin / admin). 
+Auf das integrierte Webinterface kann von jedem beliebigen Endgerät (z.B. Laptop, Smartphone) mit einem gewöhnlichen Webbrowser zugegriffen werden. Die Standard-Anmeldedaten lauten:
+-   **Benutzername:** `admin`
+-   **Passwort:** `admin`
+
 Das Webinterface ist in mehrere Abschnitte unterteilt:
 
--   **Status:** Zeigt den aktuellen System- und Netzwerkstatus an.
--   **LED Effekte:** Hier können Sie den aktuellen LED-Effekt auswählen, die Helligkeit anpassen und den Auto-Modus konfigurieren.
+-   **Status:** Zeigt den aktuellen System- und Netzwerkstatus an, inklusive IP-Adresse, Uptime und Software-Version.
+-   **LED Effekte:** Hier können Sie den aktuellen LED-Effekt auswählen und die Helligkeit anpassen.
+-   **Effekt Konfiguration:** In diesem Bereich können Sie den Auto-Modus (automatischer Effektwechsel) aktivieren und das Intervall für den Wechsel in Sekunden festlegen.
 -   **WLAN Konfiguration:** Zum Einrichten der Verbindung zu Ihrem lokalen WLAN.
 -   **MQTT Konfiguration:** Zur Konfiguration der Verbindung mit einem MQTT-Broker.
--   **System:** Bietet die Möglichkeit, die Konfiguration auf die Werkseinstellungen zurückzusetzen.
+-   **System:** Bietet die Möglichkeit, die Konfiguration auf die Werkseinstellungen zurückzusetzen, die Status-LED zu deaktivieren und sich abzumelden (Logout).
+
+## Status-LED-Indikator
+
+Die am `STATUS_LED_PIN` angeschlossene LED zeigt den aktuellen Betriebszustand des Controllers an. Dieses Verhalten kann im Webinterface unter "System" deaktiviert werden.
+
+-   **Langsames Blinken (1x pro Sekunde):** Normalbetrieb, mit dem WLAN verbunden.
+-   **Schnelles Blinken (mehrfach pro Sekunde):** Das Gerät befindet sich im Access Point (AP)-Modus und wartet auf die Konfiguration.
 
 ## Tastensteuerung
 
 Die am `BUTTON_PIN` angeschlossene Taste hat mehrere Funktionen, die durch die Dauer des Tastendrucks bestimmt werden:
-
-### `handleButton()` Funktion
-
-Die `handleButton()`-Funktion wird kontinuierlich in der Hauptschleife des Programms aufgerufen, um den Zustand der Taste zu überwachen. Sie implementiert eine Entprellung (Debouncing), um fehlerhafte Mehrfach-Auslösungen zu verhindern.
 
 -   **Kurzer Tastendruck (100ms - 2000ms):**
     -   Deaktiviert den "Finger-Modus", falls dieser aktiv war.
@@ -69,7 +82,7 @@ Die `handleButton()`-Funktion wird kontinuierlich in der Hauptschleife des Progr
     -   Die neue Konfiguration wird im Flash-Speicher gesichert.
     -   Der Name des neuen Effekts wird auf der seriellen Konsole ausgegeben.
 
--   **Mittlerer Tastendruck (2000ms - 5000ms):**
+-   **Mittlerer Tastendruck (2s - 5s):**
     -   Aktiviert den Access Point (AP)-Modus, falls das Gerät nicht bereits in diesem Modus ist. Dies ist nützlich, um die Netzwerkkonfiguration zu ändern, ohne die gesamte Konfiguration zurücksetzen zu müssen.
 
 -   **Langer Tastendruck (> 5 Sekunden):**
@@ -98,6 +111,10 @@ Der Controller kann über MQTT Nachrichten empfangen, um den "Finger-Modus" zu a
     -   `color`: Die Farbe, in der die LEDs leuchten sollen. Unterstützte Farben sind: `red`, `green`, `blue`, `yellow`, `purple`, `orange`, `pink`, `cyan`, `white`.
 
 Der Finger-Modus bleibt für 5 Sekunden aktiv und wird dann automatisch beendet.
+
+## Zukünftige Funktionen
+
+-   Over-The-Air (OTA) Updates
 
 ## Kompilieren aus dem Quellcode
 

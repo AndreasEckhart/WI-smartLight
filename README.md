@@ -75,7 +75,7 @@ Die am `STATUS_LED_PIN` angeschlossene LED zeigt den aktuellen Betriebszustand d
 
 Die am `BUTTON_PIN` angeschlossene Taste hat mehrere Funktionen, die durch die Dauer des Tastendrucks bestimmt werden:
 
--   **Kurzer Tastendruck (100ms - 2000ms):**
+-   **Kurzer Tastendruck (< 1 Sekunde):**
     -   Deaktiviert den "Finger-Modus", falls dieser aktiv war.
     -   Schaltet zum nächsten LED-Effekt in der Liste (0-8).
     -   Wenn Effekt 8 (Auto-Modus) erreicht wird, wird der Auto-Modus aktiviert.
@@ -85,7 +85,7 @@ Die am `BUTTON_PIN` angeschlossene Taste hat mehrere Funktionen, die durch die D
 -   **Mittlerer Tastendruck (2s - 5s):**
     -   Aktiviert den Access Point (AP)-Modus, falls das Gerät nicht bereits in diesem Modus ist. Dies ist nützlich, um die Netzwerkkonfiguration zu ändern, ohne die gesamte Konfiguration zurücksetzen zu müssen.
 
--   **Langer Tastendruck (> 5 Sekunden):**
+-   **Langer Tastendruck (> 8 Sekunden):**
     -   Löst einen Werksreset aus.
     -   Alle gespeicherten Konfigurationen (WLAN, MQTT, etc.) werden gelöscht.
     -   Der ESP32 wird anschließend neu gestartet.

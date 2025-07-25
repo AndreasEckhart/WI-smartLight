@@ -141,16 +141,24 @@ uint32_t hexToNeoPixelColor(const char* hexColor);
 
 void setup() {
   Serial.begin(115200);
-  delay(3000); // Wartezeit für serielle Verbindung
-  Serial.println("Starting smartLight Controller");
+  delay(1000); // Kurze Pause für die serielle Verbindung
   
   // Hardware initialisieren
   pinMode(STATUS_LED_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   
+  for (int i = 0; i <= 6; i++) {
+    digitalWrite(STATUS_LED_PIN, !digitalRead(STATUS_LED_PIN));
+    delay(200);
+  }
+  digitalWrite(STATUS_LED_PIN, LOW);
+  
+  Serial.println("Starting smartLight Controller..."); 
+
+  // NeoPixel initialisieren
   strip.begin();
   strip.show();
-  strip.setBrightness(20);
+  strip.setBrightness(10);
   
   // LittleFS initialisieren
   if (!LittleFS.begin()) {
@@ -179,7 +187,7 @@ void setup() {
     setupMQTT();
   }
   
-  Serial.println("Setup complete");
+  Serial.println("Setup completed");
   printStatus();
 }
 
@@ -288,7 +296,7 @@ void startWiFi() {
       
       Serial.print("Connecting to WiFi");
       int attempts = 0;
-      while (WiFi.status() != WL_CONNECTED && attempts < 5) {
+      while (WiFi.status() != WL_CONNECTED && attempts <= 5) {
         delay(1000);
         Serial.print(".");
         attempts++;
@@ -303,8 +311,9 @@ void startWiFi() {
       } else {
         onlineStatus = false; // Setze Online-Status auf false, wenn nicht verbunden
         Serial.println();
-        Serial.println("WiFi connection failed, starting AP mode");
-        startAPMode();
+        //Serial.println("WiFi connection failed, starting AP mode");
+        //startAPMode();
+        Serial.println("WiFi connection failed, retrying in 60 seconds...");
       }
     } else {
       Serial.println("No WiFi credentials, starting AP mode");
@@ -498,7 +507,7 @@ void handleButton() {
       buttonPressed = false;
       unsigned long pressDuration = currentTime - buttonPressStart;
       
-      if (pressDuration > 5000) {
+      if (pressDuration > 8000) {
         // Lange Taste gedrückt (>5 Sekunden) = Reset
         Serial.println("Reset durch Button ausgelöst");
         clearConfig();
@@ -534,7 +543,7 @@ void updateStatusLED() {
     digitalWrite(STATUS_LED_PIN, LOW); // LED aus, wenn deaktiviert
     return;
   }
-  unsigned long interval = ap_mode ? 500 : (WiFi.status() == WL_CONNECTED ? 1000 : 100);
+  unsigned long interval = ap_mode ? 250 : (WiFi.status() == WL_CONNECTED ? 1000 : 100);
   
   if (millis() - statusLedTimer >= interval) {
     statusLedState = !statusLedState;
@@ -696,8 +705,8 @@ void handleRoot() {
     file.close();
   } else {
     // Fallback HTML wenn Datei nicht existiert
-    String html = "<!DOCTYPE html><html><head><title>ESP32 Config</title></head><body>";
-    html += "<h1>ESP32 Configuration</h1>";
+    String html = "<!DOCTYPE html><html><head><title>smartLight Config</title></head><body>";
+    html += "<h1>smartLight Configuration</h1>";
     html += "<p>Web interface files not found. Please upload the LittleFS files.</p>";
     html += "</body></html>";
     server.send(200, "text/html", html);

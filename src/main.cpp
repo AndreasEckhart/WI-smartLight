@@ -142,7 +142,7 @@ uint32_t hexToNeoPixelColor(const char* hexColor);
 void setup() {
   Serial.begin(115200);
   delay(1000); // Kurze Pause für die serielle Verbindung
-  
+
   // Hardware initialisieren
   pinMode(STATUS_LED_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
@@ -543,7 +543,7 @@ void updateStatusLED() {
     digitalWrite(STATUS_LED_PIN, LOW); // LED aus, wenn deaktiviert
     return;
   }
-  unsigned long interval = ap_mode ? 250 : (WiFi.status() == WL_CONNECTED ? 1000 : 100);
+  unsigned long interval = ap_mode ? 250 : (WiFi.status() == WL_CONNECTED ? 2000 : 100);
   
   if (millis() - statusLedTimer >= interval) {
     statusLedState = !statusLedState;

@@ -1,7 +1,7 @@
 
 # WI-smartLight - ESP32 LED Controller
 
-![WI-smartLight](https://i.imgur.com/your-image.png) 
+<img width="300" height="300" alt="WI_smartLight" src="https://github.com/user-attachments/assets/132026ce-d991-460d-8081-10dabbef5d36" />
 
 Dieses Projekt ist ein multifunktionaler LED-Controller, der auf einem ESP32 basiert. Er bietet ein Webinterface zur Konfiguration und Steuerung, MQTT-Integration und eine physische Tastensteuerung.
 

@@ -37,6 +37,7 @@
 const String yourName = "Andi";
 
 // Authentifizierungsdaten (hardcoded)
+bool useAuthentication = false;   // HTTP-Authentifizierung deaktiviert
 const char* http_username = "admin";
 const char* http_password = "admin";
 
@@ -1003,6 +1004,7 @@ String getChipId() {
 
 // Authentifizierungsfunktion
 bool webAuthenticate() {
+  if (!useAuthentication) return true; // Auth deaktiviert -> direkt weiter
   if (!server.authenticate(http_username, http_password)) {
     server.requestAuthentication(); // Authentifizierung anfordern
     return false;

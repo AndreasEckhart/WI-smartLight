@@ -19,6 +19,7 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WebServer.h>
+#include <DNSServer.h>
 #include <ESPmDNS.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
@@ -38,6 +39,10 @@ const String yourName = "Andi";
 // Authentifizierungsdaten (hardcoded)
 const char* http_username = "admin";
 const char* http_password = "admin";
+
+// Captive Portal DNS
+const byte DNS_PORT = 53;
+DNSServer dnsServer;
 
 // WiFi und Server
 WebServer server(80);
@@ -363,8 +368,13 @@ void startAPMode() {
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ap_ssid.c_str(), ap_password.c_str());
   
+  IPAddress apIP = WiFi.softAPIP();
   Serial.print("AP Mode started. IP: ");
-  Serial.println(WiFi.softAPIP());
+  Serial.println(apIP);
+
+  // DNS fängt alle Domains ab -> Captive Portal
+  dnsServer.start(DNS_PORT, "*", apIP);
+
 }
 
 void setupWebServer() {

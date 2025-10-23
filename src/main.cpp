@@ -27,14 +27,15 @@
 #include <Adafruit_NeoPixel.h>
 #include <Preferences.h>
 
+#define PRODUCT_VERSION "1.0.0"
+const String yourName = "Andi";
+
 // Hardware Definitionen
 #define NEOPIXEL_PIN 3
 #define NEOPIXEL_COUNT 24
 #define BRIGHTNESS  20    // Standard Neopixel Helligkeit (0-100)
 #define STATUS_LED_PIN 2
 #define BUTTON_PIN 9
-#define PRODUCT_VERSION "1.0.0"
-const String yourName = "Andi";
 
 // Authentifizierungsdaten (hardcoded)
 bool useAuthentication = false;   // HTTP-Authentifizierung deaktiviert

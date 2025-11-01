@@ -19,12 +19,22 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WebServer.h>
+#include <DNSServer.h>
 #include <ESPmDNS.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <Adafruit_NeoPixel.h>
 #include <Preferences.h>
+
+// Hinweis für den Programmierkurs:
+// Bitte bearbeite deine eigenen LED-Effekte ausschließlich in:
+//   - include/user_effects.h (Signaturen)
+//   - src/user_effects.cpp   (Implementierung)
+// Der gesamte Core (WLAN, Webserver, MQTT, Captive Portal etc.) ist hier fertig vorbereitet.
+// In diesem File musst du nichts ändern, außer du willst die Tasten-Logik oder Namen ergänzen.
+
+#include "user_effects.h"
 
 #define PRODUCT_VERSION "1.0.0"
 const String yourName = "Andi";
@@ -40,6 +50,10 @@ const String yourName = "Andi";
 bool useAuthentication = false;   // HTTP-Authentifizierung deaktiviert
 const char* http_username = "admin";
 const char* http_password = "admin";
+
+// Captive Portal DNS
+const byte DNS_PORT = 53;
+DNSServer dnsServer;
 
 // WiFi und Server
 WebServer server(80);
@@ -68,7 +82,7 @@ String mqtt_topic = "esp32/status";
 bool mqtt_enabled = false;
 
 // LED Effekte
-int currentEffect = 0;
+int currentEffect = 0; // 0 = Auto-Modus, 1..6 vordefiniert/Benutzer, 7 = Alle aus
 int currentBrightness = BRIGHTNESS;
 unsigned long lastEffectUpdate = 0;
 int effectSpeed = 50;
@@ -135,6 +149,7 @@ void handleLogout();
 void handleNotFound();
 void handleStatusLed();
 void handleFavicon();
+void handleCaptiveRedirect();
 String getEffectName(int effect);
 String getChipId();
 bool webAuthenticate();
@@ -195,6 +210,10 @@ void setup() {
 
 void loop() {
   server.handleClient();
+  // Captive Portal DNS bearbeiten, wenn AP-Modus aktiv ist
+  if (ap_mode) {
+    dnsServer.processNextRequest();
+  }
   
   handleButton();
   updateStatusLED();
@@ -218,18 +237,29 @@ void loadConfig() {
   mqtt_topic = preferences.getString("mqtt_topic", "esp32/status");
   mqtt_enabled = preferences.getBool("mqtt_enabled", false);
   
-  currentEffect = preferences.getInt("effect", 0);
+  int savedEffect = preferences.getInt("effect", 0);
   currentBrightness = preferences.getInt("brightness", BRIGHTNESS);
   currentAutoTimer = preferences.getInt("auto_timer", 30);
   statusLedEnabled = preferences.getBool("led_enabled", true);
   
+  // Migration und Begrenzung auf neue Effektbelegung (0..7)
+  // Altbelegung: 8 = Auto, 9 = User1, 10 = User2
+  if (savedEffect == 8) {
+    currentEffect = 0; // Auto-Modus
+  } else if (savedEffect == 9) {
+    currentEffect = 1; // User Effekt 1
+  } else if (savedEffect == 10) {
+    currentEffect = 2; // User Effekt 2
+  } else if (savedEffect < 0 || savedEffect > 7) {
+    currentEffect = 0; // Fallback: Auto-Modus
+  } else {
+    currentEffect = savedEffect;
+  }
+
   strip.setBrightness(currentBrightness);
 
-  if(currentEffect == 8) {
-    autoMode = true; // Auto-Modus aktivieren, wenn Effekt 8
-  } else {
-    autoMode = false;
-  }
+  // Auto-Modus aktivieren, wenn Effekt 0
+  autoMode = (currentEffect == 0);
   
   preferences.end();
 }
@@ -310,12 +340,15 @@ void startWiFi() {
         Serial.println(WiFi.localIP());
         ap_mode = false;
         onlineStatus = true; // Setze Online-Status auf true, wenn verbunden
+        // Sicherstellen, dass Captive DNS gestoppt ist und AP aus
+        dnsServer.stop();
+        WiFi.softAPdisconnect(true);
+        WiFi.mode(WIFI_STA);
       } else {
         onlineStatus = false; // Setze Online-Status auf false, wenn nicht verbunden
         Serial.println();
-        //Serial.println("WiFi connection failed, starting AP mode");
-        //startAPMode();
-        Serial.println("WiFi connection failed, retrying in 60 seconds...");
+        Serial.println("WiFi connection failed, starting AP mode");
+        startAPMode();
       }
     } else {
       Serial.println("No WiFi credentials, starting AP mode");
@@ -338,20 +371,22 @@ void checkWiFi() {
 
       // Prüfen ob AP-Modus aktiv ist
       if (ap_mode) {
-        Serial.println("AP Mode active, skipping WiFi check");
-        return;
-      }
-      // Prüfen ob WiFi verbunden ist
-      if (WiFi.status() != WL_CONNECTED) {
-        onlineStatus = false;
-        Serial.println("WiFi disconnected, attempting to reconnect");
-        WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
-        if (WiFi.status() == WL_CONNECTED) {
-          Serial.println("WiFi reconnected");
-          onlineStatus = true;
-        }
+        // Im AP-Modus KEINE parallele STA-Verbindung versuchen, um AP stabil zu halten
       } else {
-        onlineStatus = true; // Setze Online-Status auf true, wenn verbunden
+        // Kein AP: normale Reconnect-Logik
+        if (WiFi.status() != WL_CONNECTED) {
+          onlineStatus = false;
+          Serial.println("WiFi disconnected, attempting to reconnect");
+          WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
+          if (WiFi.status() == WL_CONNECTED) {
+            Serial.println("WiFi reconnected");
+            onlineStatus = true;
+            // Vorsichtshalber DNS stoppen, falls noch aktiv
+            dnsServer.stop();
+          }
+        } else {
+          onlineStatus = true; // Setze Online-Status auf true, wenn verbunden
+        }
       }
     }
   }
@@ -362,19 +397,34 @@ void startAPMode() {
   ap_mode = true;
   if(wifi_enabled) statusLedEnabled = true; // Status LED immer aktivieren, wenn WiFi aktiviert ist
 
+  // Stabiler reiner AP-Modus
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ap_ssid.c_str(), ap_password.c_str());
   
+  IPAddress apIP = WiFi.softAPIP();
   Serial.print("AP Mode started. IP: ");
-  Serial.println(WiFi.softAPIP());
+  Serial.println(apIP);
+
+  // DNS fängt alle Domains ab -> Captive Portal
+  dnsServer.start(DNS_PORT, "*", apIP);
+
 }
 
 void setupWebServer() {
   // Statische Dateien
   server.on("/", HTTP_GET, handleRoot);
+  server.on("/index.html", HTTP_GET, handleRoot);
   server.on("/style.css", handleCSS);
   server.on("/script.js", handleJS);
   server.on("/favicon.ico", handleFavicon);
+  
+  // Captive Portal / OS Connectivity Checks auf mDNS umleiten
+  server.on("/generate_204", HTTP_ANY, handleCaptiveRedirect);       // Android
+  server.on("/hotspot-detect.html", HTTP_ANY, handleCaptiveRedirect); // iOS/macOS
+  server.on("/fwlink", HTTP_ANY, handleCaptiveRedirect);              // Windows alt
+  server.on("/ncsi.txt", HTTP_ANY, [](){                              // Windows NCSI (bewusst 200 OK)
+    server.send(200, "text/plain", "Microsoft NCSI");
+  });
   
   // API Endpoints
   server.on("/api/status", HTTP_GET, handleStatus);
@@ -523,12 +573,9 @@ void handleButton() {
       } else if (pressDuration > 100) {
         fingerMode = false; // Kurze Taste gedrückt = Finger-Modus deaktivieren
         // Kurze Taste gedrückt = LED Effekt wechseln
-        currentEffect = (currentEffect + 1) % 9; // 0-8 Effekte
-        if(currentEffect == 8) {
-          autoMode = true; // Auto-Modus aktivieren, wenn Effekt 8
-        } else {
-          autoMode = false;
-        }
+        // Neue Belegung: 0 = Auto, 1..6 = Effekte, 7 = Alle aus
+        currentEffect = (currentEffect + 1) % 8; // 0-7 Effekte
+        autoMode = (currentEffect == 0);
         saveConfig();
         runEffect(currentEffect);
         Serial.print("LED Effekt gewechselt: ");
@@ -567,12 +614,12 @@ void updateNeoPixels() {
       fingerModeTimer = 0;
     }
   } else if (autoMode) {
-    // Auto-Modus: alle Effekte nacheinander
+    // Auto-Modus: zyklisch durch 1..6 (User1, User2, User3, Rainbow, Theater, Fire)
     if (millis() - autoModeTimer > currentAutoTimer * 1000) { // konfigurierte Wechelzeit pro Effekt
-      autoModeIndex = (autoModeIndex + 1) % 8;
+      autoModeIndex = (autoModeIndex % 6) + 1; // 1..6
       autoModeTimer = millis();
     }
-    if(autoModeIndex == 0) autoModeIndex = 1; // Effekt 0 = Alle aus überspringen
+    if (autoModeIndex < 1 || autoModeIndex > 6) autoModeIndex = 1;
     runEffect(autoModeIndex);
   } else {
     runEffect(currentEffect);
@@ -586,36 +633,35 @@ void runEffect(int effect) {
   step++;
   
   switch (effect) {
-    case 0: // Alle aus
-      strip.clear();
+    case 0: // Auto-Modus (Logik in updateNeoPixels), hier nichts tun
       break;
-      
-    case 1: // Rainbow
+
+    case 1: // User Effekt 1
+      userEffect1(step);
+      break;
+
+    case 2: // User Effekt 2
+      userEffect2(step);
+      break;
+
+    case 3: // User Effekt 3
+      userEffect3(step);
+      break;
+
+    case 4: // Rainbow
       rainbowEffect(step);
       break;
-      
-    case 2: // Color Wipe
-      colorWipeEffect(step, strip.Color(255, 0, 0));
-      break;
-      
-    case 3: // Theater Chase
+
+    case 5: // Theater Chase
       theaterChaseEffect(step, strip.Color(127, 127, 127));
       break;
-      
-    case 4: // Breathing
-      breathingEffect(step, strip.Color(0, 255, 0));
-      break;
-      
-    case 5: // Sparkle
-      sparkleEffect(strip.Color(255, 255, 255));
-      break;
-      
-    case 6: // Running Light
-      runningLightEffect(step, strip.Color(0, 0, 255));
-      break;
-      
-    case 7: // Fire
+
+    case 6: // Fire
       fireEffect(step);
+      break;
+
+    case 7: // Alle aus
+      strip.clear();
       break;
   }
 }
@@ -837,8 +883,11 @@ void handleEffectConfig() {
   JsonDocument doc;
   deserializeJson(doc, server.arg("plain"));
   
-  currentEffect = doc["effect"];
-  autoMode = (currentEffect == 8);
+  int requested = doc["effect"] | 0;
+  if (requested < 0) requested = 0;
+  if (requested > 7) requested = 7;
+  currentEffect = requested;
+  autoMode = (currentEffect == 0);
   saveConfig();
   
   JsonDocument response;
@@ -952,6 +1001,29 @@ void handleLogout() {
 }
 
 void handleNotFound() {
+  // Versuche, statische Dateien aus LittleFS zu liefern
+  String path = server.uri();
+  if (path.length() == 0) path = "/";
+  if (LittleFS.exists(path)) {
+    File file = LittleFS.open(path, "r");
+    if (file) {
+      String contentType = "text/plain";
+      if (path.endsWith(".html")) contentType = "text/html";
+      else if (path.endsWith(".css")) contentType = "text/css";
+      else if (path.endsWith(".js")) contentType = "application/javascript";
+      else if (path.endsWith(".ico")) contentType = "image/x-icon";
+      server.streamFile(file, contentType);
+      file.close();
+      return;
+    }
+  }
+  if (ap_mode) {
+    // Im AP-Modus auf AP-IP umleiten (robuster als mDNS)
+    String target = String("http://") + WiFi.softAPIP().toString() + "/";
+    server.sendHeader("Location", target, true);
+    server.send(302, "text/plain", "");
+    return;
+  }
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -971,17 +1043,28 @@ void handleFavicon() {
   server.send(204);
 }
 
+// Captive-Portal Redirect: leite auf mDNS Hostname
+void handleCaptiveRedirect() {
+  if (ap_mode) {
+    // Auf die AP-IP umleiten, damit alle Clients (auch ohne mDNS) funktionieren
+    String target = String("http://") + WiFi.softAPIP().toString() + "/";
+    server.sendHeader("Location", target, true);
+    server.send(302, "text/plain", "");
+  } else {
+    handleRoot();
+  }
+}
+
 String getEffectName(int effect) {
   switch (effect) {
-    case 0: return "Alle aus";
-    case 1: return "Rainbow";
-    case 2: return "Color Wipe";
-    case 3: return "Theater Chase";
-    case 4: return "Breathing";
-    case 5: return "Sparkle";
-    case 6: return "Running Light";
-    case 7: return "Fire";
-    case 8: return "Auto-Modus";
+    case 0: return "Auto-Modus";
+    case 1: return "User Effekt 1";
+    case 2: return "User Effekt 2";
+    case 3: return "User Effekt 3";
+    case 4: return "Rainbow";
+    case 5: return "Theater Chase";
+    case 6: return "Fire";
+    case 7: return "Alle aus";
     default: return "Unbekannt";
   }
 }

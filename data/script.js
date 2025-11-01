@@ -109,7 +109,7 @@ async function loadStatus() {
         const wechselzeitStatus = document.getElementById('currentWechselzeitStatus');
         const currentWechselzeit = document.getElementById('currentWechselzeit');
         
-        if (parseInt(data.effect || 0) === 8) {
+        if (parseInt(data.effect || 0) === 0) {
             wechselzeitStatus.classList.add('show');
             if (data.auto_timer !== undefined) {
                 currentWechselzeit.textContent = formatTime(data.auto_timer);
@@ -139,7 +139,7 @@ async function loadStatus() {
         document.getElementById('effectSelect').value = data.effect || 0;
         
         // Show/hide wechselzeit container based on current effect
-        toggleWechselzeitVisibility(parseInt(data.effect || 0) === 8);
+    toggleWechselzeitVisibility(parseInt(data.effect || 0) === 0);
 
         // Update brightness slider if value changed externally
         if (data.brightness !== undefined) {

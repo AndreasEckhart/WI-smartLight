@@ -90,19 +90,18 @@
                     <div class="form-group">
                         <label for="effectSelect">Effekt auswählen:</label>
                         <select id="effectSelect" onchange="changeEffect()">
-                            <option value="0">Alle aus</option>
-                            <option value="1">Rainbow</option>
-                            <option value="2">Color Wipe</option>
-                            <option value="3">Theater Chase</option>
-                            <option value="4">Breathing</option>
-                            <option value="5">Sparkle</option>
-                            <option value="6">Running Light</option>
-                            <option value="7">Fire</option>
-                            <option value="8">Auto-Modus</option>
+                            <option value="0">Auto-Modus</option>
+                            <option value="1">User Effekt 1</option>
+                            <option value="2">User Effekt 2</option>
+                            <option value="3">User Effekt 3</option>
+                            <option value="4">Rainbow</option>
+                            <option value="5">Theater Chase</option>
+                            <option value="6">Fire</option>
+                            <option value="7">Alle aus</option>
                         </select>
                     </div>
 
-                    <!-- Wechselzeit-Slider - nur sichtbar bei Effekt 8 -->
+                    <!-- Wechselzeit-Slider - nur sichtbar bei Effekt 0 (Auto) -->
                     <div class="wechselzeit-container" id="wechselzeitContainer">
                         <div class="form-group">
                             <label for="wechselzeitSlider">Wechselzeit: <span class="time-display" id="wechselzeitValue">30 Sekunden</span></label>

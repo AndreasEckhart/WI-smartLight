@@ -7,9 +7,9 @@
 // Du brauchst in main.cpp nichts zu ändern.
 //
 // WICHTIG:
-// - Verwende in deinen Funktionen den globalen NeoPixel-Streifen "strip".
-// - Setze nur die Pixel-Farben (strip.setPixelColor(...)).
-// - KEIN strip.show() hier aufrufen – das übernimmt die Hauptlogik.
+// - Verwende in deinen Funktionen den globalen NeoPixel-Streifen "ring".
+// - Setze nur die Pixel-Farben (ring.setPixelColor(...)).
+// - KEIN ring.show() hier aufrufen – das übernimmt die Hauptlogik.
 // - Der Parameter "step" erhöht sich automatisch und eignet sich als Zeit-/Positionszähler.
 //
 // Beispiele findest du in src/user_effects.cpp.

@@ -62,7 +62,7 @@ PubSubClient mqttClient(wifiClient);
 Preferences preferences;
 
 // NeoPixel
-Adafruit_NeoPixel strip(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel ring(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 // Konfigurationsvariablen
 bool wifi_enabled = false;
@@ -173,9 +173,9 @@ void setup() {
   Serial.println("Starting smartLight Controller..."); 
 
   // NeoPixel initialisieren
-  strip.begin();
-  strip.show();
-  strip.setBrightness(10);
+  ring.begin();
+  ring.show();
+  ring.setBrightness(10);
   
   // LittleFS initialisieren
   if (!LittleFS.begin()) {
@@ -256,7 +256,7 @@ void loadConfig() {
     currentEffect = savedEffect;
   }
 
-  strip.setBrightness(currentBrightness);
+  ring.setBrightness(currentBrightness);
 
   // Auto-Modus aktivieren, wenn Effekt 0
   autoMode = (currentEffect == 0);
@@ -625,7 +625,7 @@ void updateNeoPixels() {
     runEffect(currentEffect);
   }
   
-  strip.show();
+  ring.show();
 }
 
 void runEffect(int effect) {
@@ -653,7 +653,7 @@ void runEffect(int effect) {
       break;
 
     case 5: // Theater Chase
-      theaterChaseEffect(step, strip.Color(127, 127, 127));
+      theaterChaseEffect(step, ring.Color(127, 127, 127));
       break;
 
     case 6: // Fire
@@ -661,31 +661,31 @@ void runEffect(int effect) {
       break;
 
     case 7: // Alle aus
-      strip.clear();
+      ring.clear();
       break;
   }
 }
 
 void rainbowEffect(int step) {
-  for (int i = 0; i < strip.numPixels(); i++) {
-    int pixelHue = (i * 65536L / strip.numPixels()) + (step * 256);
-    strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
+  for (int i = 0; i < ring.numPixels(); i++) {
+    int pixelHue = (i * 65536L / ring.numPixels()) + (step * 256);
+    ring.setPixelColor(i, ring.gamma32(ring.ColorHSV(pixelHue)));
   }
 }
 
 void colorWipeEffect(int step, uint32_t color) {
-  int pos = (step / 3) % (strip.numPixels() * 2);
-  if (pos < strip.numPixels()) {
-    strip.setPixelColor(pos, color);
+  int pos = (step / 3) % (ring.numPixels() * 2);
+  if (pos < ring.numPixels()) {
+    ring.setPixelColor(pos, color);
   } else {
-    strip.setPixelColor(pos - strip.numPixels(), 0);
+    ring.setPixelColor(pos - ring.numPixels(), 0);
   }
 }
 
 void theaterChaseEffect(int step, uint32_t color) {
-  strip.clear();
-  for (int i = 0; i < strip.numPixels(); i += 3) {
-    strip.setPixelColor(i + ((step / 3) % 3), color);
+  ring.clear();
+  for (int i = 0; i < ring.numPixels(); i += 3) {
+    ring.setPixelColor(i + ((step / 3) % 3), color);
   }
 }
 
@@ -693,25 +693,25 @@ void breathingEffect(int step, uint32_t color) {
   float breath = (sin(step * 0.1) + 1.0) / 2.0;
   uint8_t brightness = (uint8_t)(breath * 255);
   
-  for (int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, strip.Color(brightness, brightness/2, brightness/4));
+  for (int i = 0; i < ring.numPixels(); i++) {
+    ring.setPixelColor(i, ring.Color(brightness, brightness/2, brightness/4));
   }
 }
 
 void sparkleEffect(uint32_t color) {
-  strip.clear();
-  int pos = random(strip.numPixels());
-  strip.setPixelColor(pos, color);
+  ring.clear();
+  int pos = random(ring.numPixels());
+  ring.setPixelColor(pos, color);
 }
 
 void runningLightEffect(int step, uint32_t color) {
-  strip.clear();
-  int pos = step % strip.numPixels();
-  strip.setPixelColor(pos, color);
+  ring.clear();
+  int pos = step % ring.numPixels();
+  ring.setPixelColor(pos, color);
 }
 
 void fireEffect(int step) {
-  for (int i = 0; i < strip.numPixels(); i++) {
+  for (int i = 0; i < ring.numPixels(); i++) {
     int heat = random(0, 255);
     heat = heat - random(0, 50);
     if (heat < 0) heat = 0;
@@ -720,7 +720,7 @@ void fireEffect(int step) {
     uint8_t g = heat / 3;
     uint8_t b = 0;
     
-    strip.setPixelColor(i, strip.Color(r, g, b));
+    ring.setPixelColor(i, ring.Color(r, g, b));
   }
 }
 
@@ -906,7 +906,7 @@ void handleBrightness() {
   int brightness = doc["brightness"];
   if (brightness >= 0 && brightness <= 100) {
     currentBrightness = brightness;
-    strip.setBrightness(currentBrightness);
+    ring.setBrightness(currentBrightness);
     saveConfig();
     
     // Publish to MQTT if enabled
@@ -1087,7 +1087,7 @@ bool webAuthenticate() {
 }
 
 void fingerLedEffect() {
-  strip.clear();
+  ring.clear();
   
   if (fingerCount > 0) {
     uint32_t color = hexToNeoPixelColor(fingerColor.c_str());
@@ -1098,8 +1098,8 @@ void fingerLedEffect() {
       // 2 LEDs pro Finger einschalten
       for (int led = 0; led < 2; led++) {
         int ledPos = startPos + led;
-        if (ledPos < strip.numPixels()) {
-          strip.setPixelColor(ledPos, color);
+        if (ledPos < ring.numPixels()) {
+          ring.setPixelColor(ledPos, color);
         }
       }
     }
@@ -1111,7 +1111,7 @@ u_int32_t hexToNeoPixelColor(const char* hexColor) {
   // Überprüfen auf ungültige Eingabe: Nullzeiger, falsche Länge oder fehlendes '#'-Präfix
   if (hexColor == nullptr || strlen(hexColor) != 7 || hexColor[0] != '#') {
     // Ungültiges Eingabeformat, gib ROT zurück (oder eine andere Fehlerfarbe)
-    return strip.Color(255, 0, 0);
+    return ring.Color(255, 0, 0);
   }
 
   // Parsen der Hexadezimal-Teile für Rot, Grün, Blau
@@ -1129,5 +1129,5 @@ u_int32_t hexToNeoPixelColor(const char* hexColor) {
 
   // Den kombinierten Farbwert mit strip.Color() zurückgeben
   // strip.Color() kombiniert die 8-Bit-RGB-Werte zu einem 32-Bit-Farbwert
-  return strip.Color(r, g, b);
+  return ring.Color(r, g, b);
 }

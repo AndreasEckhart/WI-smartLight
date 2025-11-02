@@ -12,29 +12,25 @@ set "TARGET_PROJECT_DIR_NAME=%TARGET_BASE_DIR_NAME%\%REPO_FOLDER%"
 
 set "VSCODE_EXE_PATH=%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe"
 
-:: Workspace-Datei liegt IM geklonten Repo-Ordner
-set "WORKSPACE_FILE_NAME=2025-WI-Schnuppern.code-workspace"
-
 :: ==========================================================
-:: ERMITTLUNG DES KORREKTEN DESKTOP-PFADES (Registry-Lookup)
+:: ERMITTLUNG DES KORREKTEN DESKTOP-PFADES (Registry-Lookup KORRIGIERT)
 :: ==========================================================
 set "ACTUAL_DESKTOP_PATH="
 
-:: Der Befehl liest den aktuellen, von der Shell verwendeten Desktop-Pfad aus der Registry
+:: KORREKTUR: Der Umleitungsoperator (>) wird mit einem Caret (^) geschuetzt.
 for /f "tokens=2*" %%a in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v Desktop 2^>nul') do (
     set "ACTUAL_DESKTOP_PATH=%%b"
 )
 
 :: Fallback, falls die Abfrage fehlschlaegt
 if not defined ACTUAL_DESKTOP_PATH (
+    echo ACHTUNG: Registry-Abfrage fehlgeschlagen. Verwende Standard-Desktop-Pfad.
     set "ACTUAL_DESKTOP_PATH=%USERPROFILE%\Desktop"
 )
 
 :: Endgueltige Zielpfade definieren
 set "TARGET_BASE_DIR=%ACTUAL_DESKTOP_PATH%\%TARGET_BASE_DIR_NAME%"
-set "TARGET_PROJECT_DIR=%TARGET_BASE_DIR%\%REPO_FOLDER%"
-:: Zielpfad zur Workspace-Datei
-set "TARGET_WORKSPACE_PATH=%TARGET_PROJECT_DIR%\%WORKSPACE_FILE_NAME%"
+set "TARGET_PROJECT_DIR=%ACTUAL_DESKTOP_PATH%\%TARGET_PROJECT_DIR_NAME%"
 
 
 :: ==========================================================
@@ -93,26 +89,18 @@ echo Klonen erfolgreich. Repository liegt unter "%TARGET_PROJECT_DIR%".
 
 
 :: ==========================================================
-:: SCHRITT 3: VS CODE MIT WORKSPACE STARTEN
+:: SCHRITT 3: VS CODE MIT PROJEKT STARTEN
 :: ==========================================================
 :SCHRITT_3
 echo.
-echo === 3/3 Starte VS Code mit Workspace-Datei ===
+echo === 3/3 Starte VS Code mit PlatformIO Projekt ===
 
-:: Pruefung auf Existenz der Workspace-Datei im geklonten Repo
-if exist "%TARGET_WORKSPACE_PATH%" (
-
-    if exist "%VSCODE_EXE_PATH%" (
-        :: Starte Code.exe direkt und uebergebe den Pfad zur .code-workspace Datei
-        start "" "%VSCODE_EXE_PATH%" "%TARGET_WORKSPACE_PATH%"
-        
-        echo VS Code wurde mit Workspace gestartet.
-    ) else (
-        echo FEHLER: VS Code wurde nicht am erwarteten Pfad gefunden: "%VSCODE_EXE_PATH%"
-    )
-
+if exist "%VSCODE_EXE_PATH%" (
+    start "" "%VSCODE_EXE_PATH%" "%TARGET_PROJECT_DIR%"
+    
+    echo VS Code wurde gestartet und oeffnet das Projekt.
 ) else (
-    echo FEHLER: Workspace-Datei %WORKSPACE_FILE_NAME% nicht im Repo-Ordner gefunden: "%TARGET_PROJECT_DIR%"
+    echo FEHLER: VS Code wurde nicht am erwarteten Pfad gefunden: "%VSCODE_EXE_PATH%"
 )
 
 :: ==========================================================

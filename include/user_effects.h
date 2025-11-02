@@ -14,6 +14,6 @@
 //
 // Beispiele findest du in src/user_effects.cpp.
 
-void userEffect1(int step);
-void userEffect2(int step);
-void userEffect3(int step);
+void deinEffekt1(int step);
+void deinEffekt2(int step);
+void deinEffekt3(int step);

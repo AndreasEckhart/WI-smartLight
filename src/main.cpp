@@ -637,15 +637,15 @@ void runEffect(int effect) {
       break;
 
     case 1: // User Effekt 1
-      userEffect1(step);
+      deinEffekt1(step);
       break;
 
     case 2: // User Effekt 2
-      userEffect2(step);
+      deinEffekt2(step);
       break;
 
     case 3: // User Effekt 3
-      userEffect3(step);
+      deinEffekt3(step);
       break;
 
     case 4: // Rainbow

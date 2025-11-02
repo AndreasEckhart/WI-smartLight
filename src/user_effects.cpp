@@ -5,9 +5,9 @@ extern Adafruit_NeoPixel strip;
 
 // HINWEIS ZUM PROGRAMMIERKURS
 // --------------------------------------------------
-// Hier schreibst du DEINEN Code für die drei Effekte.
+// Hier schreibst du DEINEN Code für deine persönlichen drei Effekte.
 // Die Funktionen werden von der Haupt-Logik in main.cpp regelmäßig aufgerufen.
-// Du kannst mit dem Button durch die Effekte schalten, bis "User Effekt 1/2/3" erscheint.
+// Du kannst mit dem Button durch die Effekte schalten, bis "Dein Effekt 1/2/3" erscheint.
 //
 // Regeln:
 // - Keine blockierenden Delays (delay(...) vermeiden), die Hauptschleife übernimmt das Timing.
@@ -18,7 +18,7 @@ extern Adafruit_NeoPixel strip;
 //
 // Tipp: Für Animationen kannst du z.B. mit (step % strip.numPixels()) arbeiten.
 
-void userEffect1(int step) {
+void deinEffekt1(int step) {
   // Beispiel 1: Lauflicht in Rot
   int n = strip.numPixels();
   int pos = step % n;
@@ -26,7 +26,7 @@ void userEffect1(int step) {
   strip.setPixelColor(pos, strip.Color(255, 0, 0));
 }
 
-void userEffect2(int step) {
+void deinEffekt2(int step) {
   // Beispiel 2:Jede zweite LED soll in einer anderen Farbe leuchten.
   int n = strip.numPixels();
   strip.clear();
@@ -39,7 +39,7 @@ void userEffect2(int step) {
   }
 }
 
-void userEffect3(int step) {
+void deinEffekt3(int step) {
   // Beispiel 3: Color-Wipe ähnlich – eine grüne "Front" läuft voran, dahinter geht's aus
   int n = strip.numPixels();
   int speed = 2; // je größer, desto langsamer

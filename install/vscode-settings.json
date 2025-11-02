@@ -1,0 +1,13 @@
+{
+    "github.copilot.enable": {
+        "*": false,
+        "plaintext": false,
+        "markdown": false
+    },
+    "github.copilot.chat.openOnChatStart": false,
+    
+    "extensions.ignoredRecommendations": [
+        "github.copilot"
+    ],
+    "telemetry.telemetryLevel": "off" 
+}

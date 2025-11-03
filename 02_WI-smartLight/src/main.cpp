@@ -629,7 +629,7 @@ void updateNeoPixels() {
 }
 
 void runEffect(int effect) {
-  static int step = 0;
+  static unsigned int step = 0;
   step++;
   
   switch (effect) {

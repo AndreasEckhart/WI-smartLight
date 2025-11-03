@@ -29,7 +29,7 @@ unsigned long _lastUpdate = 0;
 int effectSpeed = 50;
 
 // Schrittzähler für Animationen (änderbar!)
-int step = 0;
+unsigned int step = 0;
 
 // Prüft ob genug Zeit vergangen ist und gibt true zurück wenn ja
 bool updateErforderlich() {

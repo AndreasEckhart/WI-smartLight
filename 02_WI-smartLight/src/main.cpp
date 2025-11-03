@@ -220,7 +220,7 @@ void loop() {
   updateNeoPixels();
   checkWiFi();
   
-  delay(5); // Kurze Pause, um die CPU nicht zu überlasten
+  delay(1); // Kurze Pause, um die CPU nicht zu überlasten
 }
 
 void loadConfig() {

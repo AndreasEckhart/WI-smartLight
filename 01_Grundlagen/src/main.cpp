@@ -1,45 +1,67 @@
 /***********************************************************************************
+ *
  * WI-Schnuppertage 2025 / 2026
-/***********************************************************************************
+ * 
+ ***********************************************************************************
  * Einführung in die Programmierung mittels ESP32 und LED-Ring
  * HTL-Anichstrasse, Innsbruck
  * Wirtschaftsingenieure - Betriebsinformatik / (c)2025 Andreas Eckhart
- * ***********************************************************************************/
+ ***********************************************************************************/
 
- // erforderliche Bibliotheken einbinden
-#include <Adafruit_NeoPixel.h>
-
-// Hardware Definitionen
-#define NEOPIXEL_PIN 3      // Pin für den LED-Ring
-#define NEOPIXEL_COUNT 24   // Anzahl der LEDs im Ring
-#define BRIGHTNESS 20       // Standard LED Helligkeit (0-255)
-#define STATUS_LED_PIN 2    // Pin für die Status-LED
-#define BUTTON_PIN 9        // Pin für den Taster
-
-// LED-Ring Initialisierung
-Adafruit_NeoPixel ring(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
-
+#include "helper.h"   // Alle Hilfsfunktionen und Hardware-Definitionen
 
 // Setup-Funktion - wird einmal beim Start ausgeführt
 void setup() {
-  ring.begin(); // NeoPixel starten
-  ring.show();  // Alle Pixel ausschalten
+  ring.begin();                     // NeoPixel starten
+  ring.show();                      // Alle Pixel ausschalten
   ring.setBrightness(BRIGHTNESS);   // Helligkeit der LEDs festlegen (0-255)
 }
 
 // Loop-Funktion - wird ununterbrochen ausgeführt
 void loop() {
-  ring.fill(ring.Color(255, 0, 0)); // Alle LEDs rot einschalten
-  ring.show();                      // Änderungen anzeigen
-  delay(1000);                      // 1 Sekunde warten
-  ring.fill(ring.Color(0, 0, 0));   // Alle LEDs ausschalten
-  ring.show();                      // Änderungen anzeigen
-  delay(1000);                      // 1 Sekunde warten
-  ring.fill(ring.Color(0, 255, 0)); // Alle LEDs grün einschalten
-  ring.show();                      // Änderungen anzeigen
-  delay(1000);                      // 1 Sekunde warten
-  ring.fill(ring.Color(0, 0, 255)); // Alle LEDs blau einschalten
-  ring.show();                      // Änderungen anzeigen
-  delay(1000);                      // 1 Sekunde warten
-  ring.fill(ring.Color(0, 0, 0));   // Alle LEDs ausschalten
+  // Prüfen ob genug Zeit vergangen ist für nächste Aktualisierung (ohne blockierendes delay!)
+  if (updateErforderlich()) {
+    
+    /////////////////////////////////////////////
+    // ab hier kannst du deinen Code schreiben //
+    /////////////////////////////////////////////
+
+    // Hier kommt dein Effekt-Code:
+    // Beispiel: Lauflicht in verschiedenen Farben
+    int pos = step % ring.numPixels();
+    ring.clear();
+    
+    // Farben definieren
+    // int farbe = ring.Color(Rot, Grün, Blau);
+    int rot = ring.Color(255, 0, 0);
+    int gruen = ring.Color(0, 255, 0);
+    int blau = ring.Color(0, 0, 255);
+    int gelb = ring.Color(255, 255, 0);
+    // füge hier weitere Farben hinzu falls benötigt
+    // int lila = ???
+    //
+
+    // Farbe wechselt alle 24 Schritte
+    if ((step / ring.numPixels()) % 4 == 0) {
+      effectSpeed = 100; // Mittel
+      ring.setPixelColor(pos, rot); // Rot
+    } else if ((step / ring.numPixels()) % 4 == 1) {
+      effectSpeed = 20; // Schnell
+      ring.setPixelColor(pos, gruen); // Grün
+    } else if ((step / ring.numPixels()) % 4 == 2) {
+      effectSpeed = 250; // Langsamer
+      ring.setPixelColor(pos, blau); // Blau
+    } else {
+      effectSpeed = 50; // Mittel
+      ring.setPixelColor(pos, gelb); // Gelb
+    }
+    
+
+    //////////////////////////////////////////////
+    // bis hier kannst du deinen Code schreiben //
+    //////////////////////////////////////////////
+    ring.show();  // Änderungen anzeigen
+
+  }
+
 }

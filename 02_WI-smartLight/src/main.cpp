@@ -41,7 +41,6 @@
 // Hardware Definitionen
 #define NEOPIXEL_PIN 3
 #define NEOPIXEL_COUNT 24
-#define BRIGHTNESS  20    // Standard Neopixel Helligkeit (0-100)
 #define STATUS_LED_PIN 2
 #define BUTTON_PIN 9
 
@@ -81,10 +80,15 @@ String mqtt_topic = "esp32/status";
 bool mqtt_enabled = false;
 
 // LED Effekte
-int currentEffect = 0; // 0 = Auto-Modus, 1..6 vordefiniert/Benutzer, 7 = Alle aus
+const int BRIGHTNESS = 20; // Standard Neopixel Helligkeit (0-255)
 int currentBrightness = BRIGHTNESS;
-unsigned long lastEffectUpdate = 0;
-int effectSpeed = 50;
+
+int currentEffect = 0; // 0 = Auto-Modus, 1..3 = Benutzer, 4..6 vordefiniert, 7 = Alle aus
+unsigned long lastEffectUpdate = 0; // Zeitstempel der letzten Effektaktualisierung
+const int DEFAULT_EFFECT_SPEED = 50; // Standard-Geschwindigkeit für Effekte in ms
+int effectSpeed = DEFAULT_EFFECT_SPEED;
+
+// Auto-Modus
 bool autoMode = false;
 unsigned long autoModeTimer = 0;
 int autoModeIndex = 0;
@@ -242,7 +246,6 @@ void loadConfig() {
   statusLedEnabled = preferences.getBool("led_enabled", true);
   
   // Migration und Begrenzung auf neue Effektbelegung (0..7)
-  // Altbelegung: 8 = Auto, 9 = User1, 10 = User2
   if (savedEffect == 8) {
     currentEffect = 0; // Auto-Modus
   } else if (savedEffect == 9) {
@@ -648,18 +651,22 @@ void runEffect(int effect) {
       break;
 
     case 4: // Rainbow
+      effectSpeed = DEFAULT_EFFECT_SPEED; // Standardwert für vordefinierte Effekte
       rainbowEffect(step);
       break;
 
     case 5: // Theater Chase
+      effectSpeed = DEFAULT_EFFECT_SPEED; // Standardwert für vordefinierte Effekte
       theaterChaseEffect(step, ring.Color(127, 127, 127));
       break;
 
     case 6: // Fire
+      effectSpeed = DEFAULT_EFFECT_SPEED; // Standardwert für vordefinierte Effekte
       fireEffect(step);
       break;
 
     case 7: // Alle aus
+      effectSpeed = DEFAULT_EFFECT_SPEED; // Standardwert für vordefinierte Effekte
       ring.clear();
       break;
   }
@@ -1058,12 +1065,12 @@ void handleCaptiveRedirect() {
 String getEffectName(int effect) {
   switch (effect) {
     case 0: return "Auto-Modus";
-    case 1: return "User Effekt 1";
-    case 2: return "User Effekt 2";
-    case 3: return "User Effekt 3";
-    case 4: return "Rainbow";
-    case 5: return "Theater Chase";
-    case 6: return "Fire";
+    case 1: return "Dein Effekt 1";
+    case 2: return "Dein Effekt 2";
+    case 3: return "Dein Effekt 3";
+    case 4: return "Regenbogen";
+    case 5: return "Pixelrennen";
+    case 6: return "Feuer";
     case 7: return "Alle aus";
     default: return "Unbekannt";
   }

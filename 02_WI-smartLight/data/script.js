@@ -94,6 +94,11 @@ async function loadStatus() {
         const response = await fetch('/api/status');
         const data = await response.json();
         
+        // Benutzername im Header anzeigen
+        if (data.user_name) {
+            document.getElementById('userName').textContent = data.user_name;
+        }
+        
         document.getElementById('chipId').textContent = data.chip_id;
         document.getElementById('uptime').textContent = formatUptime(data.uptime) || '-';
         document.getElementById('mode').textContent = data.mode;

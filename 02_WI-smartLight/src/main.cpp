@@ -37,7 +37,6 @@
 #include "user_effects.h"
 
 #define PRODUCT_VERSION "1.0.0"
-const String yourName = "Andi";
 
 // Hardware Definitionen
 #define NEOPIXEL_PIN 3
@@ -70,7 +69,7 @@ String wifi_ssid = "";
 String wifi_password = "";
 String hostname = "smartlight";
 bool ap_mode = false;
-String ap_ssid = hostname + "-Config-" + yourName;
+String ap_ssid = hostname + "-Config-" + getDeinName();
 String ap_password = "12345678";
 String currentVersion = PRODUCT_VERSION;
 
@@ -786,6 +785,7 @@ void handleJS() {
 void handleStatus() {
   JsonDocument doc;
   doc["chip_id"] = getChipId();
+  doc["user_name"] = getDeinName();
   doc["uptime"] = millis() / 1000; // Uptime in Sekunden
   doc["mode"] = ap_mode ? "Access Point" : "Station";
   doc["ip"] = ap_mode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();

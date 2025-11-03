@@ -27,20 +27,20 @@ void loop() {
     /////////////////////////////////////////////
 
     // Hier kommt dein Effekt-Code:
-    // Beispiel: Lauflicht in verschiedenen Farben
-    int pos = step % ring.numPixels();
-    ring.clear();
-    
     // Farben definieren
     // int farbe = ring.Color(Rot, Grün, Blau);
     int rot = ring.Color(255, 0, 0);
     int gruen = ring.Color(0, 255, 0);
     int blau = ring.Color(0, 0, 255);
     int gelb = ring.Color(255, 255, 0);
-    // füge hier weitere Farben hinzu falls benötigt
+    // füge hier beliebige weitere Farben hinzu falls benötigt
     // int lila = ???
     //
 
+    // Beispiel: Lauflicht in verschiedenen Farben
+    int pos = step % ring.numPixels();
+    ring.clear();
+    
     // Farbe wechselt alle 24 Schritte
     if ((step / ring.numPixels()) % 4 == 0) {
       effectSpeed = 100; // Mittel

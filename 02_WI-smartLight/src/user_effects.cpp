@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 
 // Zugriff auf den LED-Streifen aus main.cpp
@@ -7,6 +8,14 @@ extern Adafruit_NeoPixel ring;
 // Du kannst effectSpeed in deinen Funktionen ändern (z.B. effectSpeed = 100 für langsamer)
 // Standardwert ist 50 (Millisekunden zwischen Updates)
 extern int effectSpeed;
+
+// DEIN NAME - ÄNDERE DIESEN WERT!
+// Wird im Access Point Namen und Webinterface angezeigt
+// Beispiel: return "MaxMustermann";
+String getDeinName() {
+  String deinName = "Andreas";  // ändere hier deinen Namen
+  return deinName;
+}
 
 // HINWEIS ZUM PROGRAMMIERKURS
 // --------------------------------------------------

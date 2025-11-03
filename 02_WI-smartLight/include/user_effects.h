@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 // Programmierkurs: Eigene LED-Effekte
 // --------------------------------------------------
 // In dieser Header-Datei stehen nur die Funktions-Signaturen.
@@ -19,6 +21,10 @@
 // - Beispiel: effectSpeed = 20; macht die Animation schneller
 //
 // Beispiele findest du in src/user_effects.cpp.
+
+// Funktion die deinen Namen zurückgibt
+// ÄNDERE den Rückgabewert in src/user_effects.cpp!
+String getDeinName();
 
 void deinEffekt1(int step);
 void deinEffekt2(int step);

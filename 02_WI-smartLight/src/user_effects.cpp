@@ -1,3 +1,11 @@
+/***********************************************************************************
+ * ⚠️ ACHTUNG: DIESE DATEI ERST AB FUNKTION getDeinName() BEARBEITEN! ⚠️
+ * 
+ * Diese Datei enthält nur die Funktions-Signaturen.
+ * Implementiere deine Effekte ausschließlich in src/user_effects.cpp
+ * 
+ * HTL-Anichstrasse, Innsbruck / (c)2025 Andreas Eckhart
+ ***********************************************************************************/
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -9,22 +17,14 @@ extern Adafruit_NeoPixel ring;
 // Standardwert ist 50 (Millisekunden zwischen Updates)
 extern int effectSpeed;
 
-// DEIN NAME - ÄNDERE DIESEN WERT!
-// Wird im Access Point Namen und Webinterface angezeigt
-// Beispiel: return "MaxMustermann";
-String getDeinName() {
-  String deinName = "Andreas";  // ändere hier deinen Namen
-  return deinName;
-}
-
-// HINWEIS ZUM PROGRAMMIERKURS
+// HINWEIS ZUM PROGRAMMIEREN
 // --------------------------------------------------
 // Hier schreibst du DEINEN Code für deine persönlichen drei Effekte.
 // Die Funktionen werden von der Haupt-Logik in main.cpp regelmäßig aufgerufen.
 // Du kannst mit dem Button durch die Effekte schalten, bis "Dein Effekt 1/2/3" erscheint.
 //
 // Regeln:
-// - Keine blockierenden Delays (delay(...) vermeiden), die Hauptschleife übernimmt das Timing.
+// - Keine blockierenden Delays verwenden (delay()), die Hauptschleife übernimmt das Timing.
 // - KEIN ring.show() hier aufrufen – das erledigt main.cpp nach deinem Funktionsaufruf.
 // - Nutze "step" als fortlaufenden Zähler.
 // - Verwende ring.numPixels(), ring.setPixelColor(i, r,g,b) oder ring.Color(r,g,b).
@@ -38,10 +38,20 @@ String getDeinName() {
 //
 // Tipp: Für Animationen kannst du z.B. mit (step % ring.numPixels()) arbeiten.
 
+/***********************************************************************************
+ * ✅ AB HIER DARFST DU BEARBEITEN! ✅
+ ***********************************************************************************/
+// DEIN NAME - ÄNDERE DIESEN WERT!
+// Wird im Access Point Namen und Webinterface angezeigt
+String getDeinName() {
+  String deinName = "Andreas";  // ändere hier deinen Namen
+  return deinName;
+}
+
 void deinEffekt1(int step) {
   // Beispiel 1: Lauflicht in Rot
   // Du kannst die Geschwindigkeit anpassen mit: effectSpeed = 100; (langsamer) oder effectSpeed = 20; (schneller)
-  effectSpeed = 500;
+  effectSpeed = 50;
   int n = ring.numPixels();
   int pos = step % n;
   ring.clear();
@@ -49,23 +59,27 @@ void deinEffekt1(int step) {
 }
 
 void deinEffekt2(int step) {
-  // Beispiel 2: Jede zweite LED soll in einer anderen Farbe leuchten.
-  // Du kannst die Geschwindigkeit anpassen mit: effectSpeed = 100; (langsamer) oder effectSpeed = 20; (schneller)
+  // Beispiel 2: Pulsierende Helligkeit
+  // Die Helligkeit aller LEDs pulsiert sanft zwischen dunkel und hell
+  effectSpeed = 30; // Geschwindigkeit des Pulsierens
+  
   int n = ring.numPixels();
-  ring.clear();
+  
+  // Berechne Helligkeit basierend auf Sinusfunktion (0-255)
+  // step wird durch 50 geteilt für langsamere Pulsierung
+  float brightness = (sin(step / 50.0 * PI) + 1.0) / 2.0; // Wert zwischen 0 und 1
+  int brightnessValue = (int)(brightness * 255); // Wert zwischen 0 und 255
+  
+  // Alle LEDs mit der berechneten Helligkeit in Blau setzen
   for (int i = 0; i < n; i++) {
-    if (i % 2 == 0) {
-      ring.setPixelColor(i, ring.Color(0, 0, 255)); // Blau
-    } else {
-      ring.setPixelColor(i, ring.Color(255, 255, 0)); // Gelb
-    }
+    ring.setPixelColor(i, ring.Color(0, 0, brightnessValue));
   }
 }
 
 void deinEffekt3(int step) {
   // Beispiel 3: Color-Wipe ähnlich – eine grüne "Front" läuft voran, dahinter geht's aus
   // Hier wird eine lokale Variable "speed" verwendet, aber du kannst auch directSpeed direkt ändern
-  effectSpeed = 250; // Beispiel: Diesen Effekt langsamer machen
+  effectSpeed = 75; // Beispiel: Diesen Effekt langsamer machen
   int n = ring.numPixels();
   int speed = 2; // je größer, desto langsamer
   int pos = (step / speed) % (n * 2);

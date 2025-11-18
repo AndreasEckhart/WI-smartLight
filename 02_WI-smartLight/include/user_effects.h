@@ -1,12 +1,15 @@
+/***********************************************************************************
+ * ⚠️ ACHTUNG: DIESE DATEI NICHT BEARBEITEN! ⚠️
+ * 
+ * Diese Datei enthält nur die Funktions-Signaturen.
+ * Implementiere deine Effekte ausschließlich in src/user_effects.cpp
+ * 
+ * HTL-Anichstrasse, Innsbruck / (c)2025 Andreas Eckhart
+ ***********************************************************************************/
 #pragma once
 
 #include <Arduino.h>
 
-// Programmierkurs: Eigene LED-Effekte
-// --------------------------------------------------
-// In dieser Header-Datei stehen nur die Funktions-Signaturen.
-// Implementiere deine Effekte in src/user_effects.cpp.
-// Du brauchst in main.cpp nichts zu ändern.
 //
 // WICHTIG:
 // - Verwende in deinen Funktionen den globalen NeoPixel-Streifen "ring".

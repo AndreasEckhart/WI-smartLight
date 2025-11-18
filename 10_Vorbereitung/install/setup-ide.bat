@@ -88,12 +88,23 @@ if exist %VSCODE_PATH%.exe (
 timeout /t 5 /nobreak >nul
 
 :: ==========================================================
-:: SCHRITT 5: PLATFORMIO EXTENSION INSTALLATION (USER)
+:: SCHRITT 5: VS CODE ERWEITERUNGEN INSTALLATION (USER)
 :: ==========================================================
 echo.
-echo === 5/5 Installiere PlatformIO Extension ===
+echo === 5/5 Installiere Sprachpaket und PlatformIO ===
 
 if exist %VSCODE_PATH%.exe (
+    echo.
+    echo === Installiere German Language Pack ===
+    %VSCODE_PATH% --install-extension MS-CEINTL.vscode-language-pack-de
+    if errorlevel 1 (
+        echo Fehler beim Installieren des deutschen Sprachpakets.
+    ) else (
+        echo Deutsches Sprachpaket installiert.
+    )
+
+    echo.
+    echo === Installiere PlatformIO Extension ===
     %VSCODE_PATH% --install-extension platformio.platformio-ide
     if errorlevel 1 (
         echo Fehler beim Installieren der PlatformIO-Erweiterung.
@@ -101,7 +112,7 @@ if exist %VSCODE_PATH%.exe (
         echo PlatformIO-Erweiterung installiert.
     )
 ) else (
-    echo FEHLER: code.exe Pfad nicht gefunden. Konnte PlatformIO nicht installieren.
+    echo FEHLER: code.exe Pfad nicht gefunden. Konnte VS Code Erweiterungen nicht installieren.
 )
 
 

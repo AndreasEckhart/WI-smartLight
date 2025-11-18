@@ -26,7 +26,7 @@ unsigned long _lastUpdate = 0;
 
 // Geschwindigkeit der Animation (änderbar!)
 // Kleinere Werte = schneller, größere Werte = langsamer (in Millisekunden)
-int effectSpeed = 50;
+int effectSpeed = 20;
 
 // Schrittzähler für Animationen (änderbar!)
 unsigned int step = 0;

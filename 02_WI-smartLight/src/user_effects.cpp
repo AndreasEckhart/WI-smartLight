@@ -24,11 +24,8 @@ String getDeinName() {
 }
 
 void deinEffekt1(int step) {
-  effectSpeed = 50; // Geschwindigkeit festlegen (alle 50 ms ein Update)
-  int n = ring.numPixels();  // Anzahl der LEDs ermitteln (24 bei unserem Ring)
-  int pos = step % n;  // Aktuelle Position berechnen
-  ring.clear(); // Alle LEDs ausschalten (wichtig für den Wander-Effekt)
-  ring.setPixelColor(pos, ring.Color(255, 250, 0)); // Nur die LED an Position 'pos' auf Rot setzen
+  int magenta = ring.Color(255, 0, 255);
+  ring.fill(magenta); // Alle Magenta/Pink (Rot + Blau)
 }
 
 void deinEffekt2(int step) {

@@ -41,3 +41,6 @@ bool updateErforderlich() {
   }
   return false;
 }
+
+// Funktions-Signatur für deinen Effekt 1
+void deinEffekt1(int step);

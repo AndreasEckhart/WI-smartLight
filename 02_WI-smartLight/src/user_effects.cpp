@@ -1,9 +1,5 @@
 /***********************************************************************************
  * ⚠️ ACHTUNG: DIESE DATEI ERST AB FUNKTION getDeinName() BEARBEITEN! ⚠️
- * 
- * Diese Datei enthält nur die Funktions-Signaturen.
- * Implementiere deine Effekte ausschließlich in src/user_effects.cpp
- * 
  * HTL-Anichstrasse, Innsbruck / (c)2025 Andreas Eckhart
  ***********************************************************************************/
 #include <Arduino.h>
@@ -17,27 +13,6 @@ extern Adafruit_NeoPixel ring;
 // Standardwert ist 50 (Millisekunden zwischen Updates)
 extern int effectSpeed;
 
-// HINWEIS ZUM PROGRAMMIEREN
-// --------------------------------------------------
-// Hier schreibst du DEINEN Code für deine persönlichen drei Effekte.
-// Die Funktionen werden von der Haupt-Logik in main.cpp regelmäßig aufgerufen.
-// Du kannst mit dem Button durch die Effekte schalten, bis "Dein Effekt 1/2/3" erscheint.
-//
-// Regeln:
-// - Keine blockierenden Delays verwenden (delay()), die Hauptschleife übernimmt das Timing.
-// - KEIN ring.show() hier aufrufen – das erledigt main.cpp nach deinem Funktionsaufruf.
-// - Nutze "step" als fortlaufenden Zähler.
-// - Verwende ring.numPixels(), ring.setPixelColor(i, r,g,b) oder ring.Color(r,g,b).
-// - Farben sind im Format RGB (0-255).
-//
-// Geschwindigkeit anpassen:
-// - Du kannst die Variable "effectSpeed" ändern, um die Animationsgeschwindigkeit anzupassen.
-// - Kleinere Werte = schneller, größere Werte = langsamer (Wert in Millisekunden)
-// - Beispiel: effectSpeed = 100; (für langsamere Animation)
-// - Beispiel: effectSpeed = 20; (für schnellere Animation)
-//
-// Tipp: Für Animationen kannst du z.B. mit (step % ring.numPixels()) arbeiten.
-
 /***********************************************************************************
  * ✅ AB HIER DARFST DU BEARBEITEN! ✅
  ***********************************************************************************/
@@ -49,13 +24,11 @@ String getDeinName() {
 }
 
 void deinEffekt1(int step) {
-  // Beispiel 1: Lauflicht in Rot
-  // Du kannst die Geschwindigkeit anpassen mit: effectSpeed = 100; (langsamer) oder effectSpeed = 20; (schneller)
-  effectSpeed = 50;
-  int n = ring.numPixels();
-  int pos = step % n;
-  ring.clear();
-  ring.setPixelColor(pos, ring.Color(255, 0, 0));
+  effectSpeed = 50; // Geschwindigkeit festlegen (alle 50 ms ein Update)
+  int n = ring.numPixels();  // Anzahl der LEDs ermitteln (24 bei unserem Ring)
+  int pos = step % n;  // Aktuelle Position berechnen
+  ring.clear(); // Alle LEDs ausschalten (wichtig für den Wander-Effekt)
+  ring.setPixelColor(pos, ring.Color(255, 250, 0)); // Nur die LED an Position 'pos' auf Rot setzen
 }
 
 void deinEffekt2(int step) {

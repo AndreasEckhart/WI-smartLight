@@ -15,12 +15,27 @@
 
  // Setup-Funktion - wird einmal beim Start ausgeführt
 void setup() {
-  // hier kommt der Setup-Code hin
+    // hier kommt der Setup-Code hin
+    ring.begin();
+    ring.show();
+    ring.setBrightness(BRIGHTNESS);
 }
 
 // Loop-Funktion - wird ununterbrochen ausgeführt
 void loop() {
-  // hier kommt der Effekt-Code hin
+    // hier kommt der Effekt-Code hin
+    int rot = ring.Color(255, 0, 0);
+    int gruen = ring.Color(0, 255, 0);
+    int blau = ring.Color(0, 0, 255);
+    int orange = ring.Color(255, 165, 0);
+
+    ring.fill(rot);
+    ring.show();
+    delay(500);
+
+    ring.clear();
+    ring.show();
+    delay(500);
 }
 
 

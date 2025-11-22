@@ -15,31 +15,20 @@
 
  // Setup-Funktion - wird einmal beim Start ausgeführt
 void setup() {
-  // hier kommt der Setup-Code hin
-  ring.begin();
-  ring.show();
-  ring.setBrightness(BRIGHTNESS);
+    // hier kommt der Setup-Code hin
+
 }
 
 // Loop-Funktion - wird ununterbrochen ausgeführt
 void loop() {
-  // hier kommt der Effekt-Code hin
-  int rot = ring.Color(255, 0, 0);
-  int gruen = ring.Color(0, 255, 0);
-  int blau = ring.Color(0, 0, 255);
-  int orange = ring.Color(255, 165, 0);
+    // hier kommt der Effekt-Code hin
 
-  ring.fill(rot, 0, 6 ); // erste 6 LEDs rot
-  ring.fill(gruen, 6, 6 ); // nächste 6 LEDs grün
-  ring.fill(blau, 12, 6 ); // nächste 6 LEDs blau
-  ring.fill(orange, 18, 6 ); // letzte 6 LEDs orange
-  ring.show();
-  
 }
 
 
-// hier kommt am Ende dein Effekt 1 hin
-// bis dahin einfach leer lassen
+/***********************************************************************************
+ * hier kommt am Ende dein Effekt 1 hin - bis dahin einfach leer lassen
+ ***********************************************************************************/
 void deinEffekt1(int step) {
 
 }

@@ -15,10 +15,10 @@
 
  // Setup-Funktion - wird einmal beim Start ausgeführt
 void setup() {
-  // hier kommt der Setup-Code hin
-  ring.begin();
-  ring.show();
-  ring.setBrightness(BRIGHTNESS);
+    // hier kommt der Setup-Code hin
+    ring.begin();
+    ring.show();
+    ring.setBrightness(BRIGHTNESS);
 }
 
 // Loop-Funktion - wird ununterbrochen ausgeführt
@@ -28,6 +28,8 @@ void loop() {
     int gruen = ring.Color(0, 255, 0);
     int blau = ring.Color(0, 0, 255);
     int orange = ring.Color(255, 165, 0);
+    int magenta = ring.Color(255, 0, 255);
+    int aus = ring.Color(0, 0, 0);
 
     // BLOCKIERENDE Variante: Helligkeit von 0 bis 100 erhöhen
     // Diese Variante nutzt eine for-Schleife und delay(), dadurch reagiert
@@ -35,6 +37,7 @@ void loop() {
     ring.fill(rot, 0, 8); // Alle LEDs auf Rot vorbereiten
     ring.fill(gruen, 8, 8); // Alle LEDs auf Grün vorbereiten
     ring.fill(blau, 16, 8); // Alle LEDs auf Blau vorbereiten
+    ring.show();
 
     // Helligkeit schrittweise erhöhen
     for (int hell = 1; hell <= 100; hell++) {
@@ -53,13 +56,17 @@ void loop() {
         delay(30);                // BLOCKIEREND: 30 ms Pause pro Schritt (100 * 30ms ≈ 3s)
     }
 
+    ring.fill(aus); // Alle LEDs ausschalten
+    ring.show();
+    
     // Kurze Pause am Ende bevor Zyklus neu startet
     delay(500);
 }
 
 
-// hier kommt am Ende dein Effekt 1 hin
-// bis dahin einfach leer lassen
+/***********************************************************************************
+ * hier kommt am Ende dein Effekt 1 hin - bis dahin einfach leer lassen
+ ***********************************************************************************/
 void deinEffekt1(int step) {
 
 }

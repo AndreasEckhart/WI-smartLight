@@ -24,22 +24,37 @@ void setup() {
 // Loop-Funktion - wird ununterbrochen ausgeführt
 void loop() {
     // hier kommt der Effekt-Code hin
+
     int rot = ring.Color(255, 0, 0);
     int gruen = ring.Color(0, 255, 0);
     int blau = ring.Color(0, 0, 255);
     int orange = ring.Color(255, 165, 0);
+    int magenta = ring.Color(255, 0, 255);
 
-    ring.setPixelColor(0, rot);
-    ring.setPixelColor(1, gruen);
-    ring.setPixelColor(2, blau);
-    ring.setPixelColor(3, orange);
+    // Nacheinander alle 24 LEDs einschalten 0 bis 23
+    for (int i = 0; i < 24; i++) {
+
+        // 1. Pixel an Position 'i' auf die gewünschte Farbe setzen (z.B. rot)
+        ring.setPixelColor(i, magenta);
+
+        // 2. Die Änderungen anzeigen (LED leuchtet auf)
+        ring.show();
+
+        // 3. Kurz warten (250ms), damit das Auge das nacheinander Leuchten sieht
+        delay(250);
+    }
+
+    // 4. Wenn alle LEDs an sind alle ausschalten
+    ring.clear();
     ring.show();
-
+    delay(1000);
+  
 }
 
 
-// hier kommt am Ende dein Effekt 1 hin
-// bis dahin einfach leer lassen
+/***********************************************************************************
+ * hier kommt am Ende dein Effekt 1 hin - bis dahin einfach leer lassen
+ ***********************************************************************************/
 void deinEffekt1(int step) {
 
 }

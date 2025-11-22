@@ -1,0 +1,25 @@
+{
+    "github.copilot.enable": {
+        "*": false,
+        "plaintext": false,
+        "markdown": false
+    },
+    "github.copilot.chat.openOnChatStart": false,
+	"github.copilot.chat.enable": false,
+	"github.copilot.inlineSuggest.enable": false,
+    "extensions.ignoredRecommendations": [
+        "github.copilot"
+    ],
+    "telemetry.telemetryLevel": "off",
+	"files.exclude": {
+        "**/platformio.ini": true,
+		"**/.gitignore": true,
+		"**/.vscode": true,
+		"**/.pio": true,
+		"**/include": true,
+		"**/data": true,
+		"**/lib": true,
+		"**/test": true,
+		"**/main.cpp": true
+    }
+}

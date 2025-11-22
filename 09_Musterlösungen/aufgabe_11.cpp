@@ -24,23 +24,27 @@ void setup() {
 // Loop-Funktion - wird ununterbrochen ausgeführt
 void loop() {
     // hier kommt der Effekt-Code hin
-    int rot = ring.Color(255, 0, 0);
-    int gruen = ring.Color(0, 255, 0);
-    int blau = ring.Color(0, 0, 255);
-    int orange = ring.Color(255, 165, 0);
 
-    ring.fill(rot);
-    ring.show();
-    delay(500);
+    // Prüft, ob genug Zeit vergangen ist (nicht-blockierend!)
+    if (updateErforderlich()) {
+        deinEffekt1(step); // deinen benutzerdefinierter Effekt aufrufen
+        ring.show();  // Änderungen anzeigen
+    }
 
-    ring.clear();
-    ring.show();
-    delay(500);
 }
 
 
-// hier kommt am Ende dein Effekt 1 hin
-// bis dahin einfach leer lassen
+/***********************************************************************************
+ * hier kommt am Ende dein Effekt 1 hin - bis dahin einfach leer lassen
+ ***********************************************************************************/
 void deinEffekt1(int step) {
+    // Geschwindigkeit festlegen (alle 50 ms ein Update)
+    effectSpeed = 25;
 
+    for(int led = 0; led < ring.numPixels(); led++) {
+        // Berechnet den Farbton (Hue) basierend auf Position (led) und Zeit (step)
+        int hue = (led * 3000 + step * 300) % 65536; 
+
+        ring.setPixelColor(led, ring.ColorHSV(hue));
+    }
 }

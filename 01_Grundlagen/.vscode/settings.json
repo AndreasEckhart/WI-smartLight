@@ -12,10 +12,8 @@
     ],
     "telemetry.telemetryLevel": "off",
 	"files.exclude": {
-        "**/platformio.ini": true,
 		"**/.gitignore": true,
 		"**/.vscode": true,
-		"**/.pio": true,
 		"**/include": true,
 		"**/data": true,
 		"**/lib": true

@@ -63,9 +63,9 @@ Adafruit_NeoPixel ring(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 bool wifi_enabled = false;
 String wifi_ssid = "";
 String wifi_password = "";
-String hostname = "smartlight";
+String hostname = "smartlight-" + getDeinName();
 bool ap_mode = false;
-String ap_ssid = hostname + "-Config-" + getDeinName();
+String ap_ssid = "smartlight-Config-" + getDeinName();
 String ap_password = "12345678";
 String currentVersion = PRODUCT_VERSION;
 

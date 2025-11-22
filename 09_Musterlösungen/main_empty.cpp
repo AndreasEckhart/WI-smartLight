@@ -13,7 +13,7 @@
  * ✅ AB HIER KANNST DU BEARBEITEN! ✅
  ***********************************************************************************/
 
- // Setup-Funktion - wird einmal beim Start ausgeführt
+// Setup-Funktion - wird einmal beim Start ausgeführt
 void setup() {
     // hier kommt der Setup-Code hin
 

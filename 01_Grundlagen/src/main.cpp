@@ -13,7 +13,7 @@
  * ✅ AB HIER KANNST DU BEARBEITEN! ✅
  ***********************************************************************************/
 
- // Setup-Funktion - wird einmal beim Start ausgeführt
+// Setup-Funktion - wird einmal beim Start ausgeführt
 void setup() {
     // hier kommt der Setup-Code hin
 
@@ -21,7 +21,7 @@ void setup() {
 
 // Loop-Funktion - wird ununterbrochen ausgeführt
 void loop() {
-    // hier kommt der Loop-Code hin
+    // hier kommt der Effekt-Code hin
 
 }
 

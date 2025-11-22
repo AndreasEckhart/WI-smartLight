@@ -65,7 +65,7 @@ String wifi_ssid = "";
 String wifi_password = "";
 String hostname = "smartlight-" + getDeinName();
 bool ap_mode = false;
-String ap_ssid = "smartlight-Config-" + getDeinName();
+String ap_ssid = "smartLight-Config-" + getDeinName();
 String ap_password = "12345678";
 String currentVersion = PRODUCT_VERSION;
 

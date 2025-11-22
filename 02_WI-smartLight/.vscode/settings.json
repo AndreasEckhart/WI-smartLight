@@ -17,6 +17,7 @@
 		"**/include": true,
 		"**/data": true,
 		"**/lib": true,
-		"**/test": true
+		"**/test": true,
+		"**/main.cpp": true
     }
 }

@@ -38,20 +38,30 @@ void loop() {
  * hier kommt am Ende dein Effekt 1 hin - bis dahin einfach leer lassen
  ***********************************************************************************/
 void deinEffekt1(int step) {
-    // Geschwindigkeit festlegen (alle 50 ms ein Update)
-    effectSpeed = 50;
 
-    // Anzahl der LEDs ermitteln (24 bei unserem Ring)
-    int n = ring.numPixels();
-    
-    // Aktuelle Position berechnen
-    // step wird automatisch hochgezählt bei jedem updateErforderlich()
-    // Modulo (%) sorgt für Endlosschleife: 0, 1, 2, ..., 23, 0, 1, ...
-    int pos = step % n;
-    
-    // Alle LEDs ausschalten (wichtig für den Wander-Effekt)
+    // Farben definieren
+    // int farbe = ring.Color(Rot, Grün, Blau);
+    int rot = ring.Color(255, 0, 0);
+    int gruen = ring.Color(0, 255, 0);
+    int blau = ring.Color(0, 0, 255);
+    int magenta = ring.Color(255, 0, 255);
+
+    // Beispiel: Lauflicht in verschiedenen Farben
+    int pos = step % ring.numPixels();
     ring.clear();
     
-    // Nur die LED an Position 'pos' auf Rot setzen
-    ring.setPixelColor(pos, ring.Color(255, 0, 0)); // RGB: Rot=255, Grün=0, Blau=0
+    // Farbe wechselt alle 24 Schritte
+    if ((step / ring.numPixels()) % 4 == 0) {
+        effectSpeed = 100; // Mittel
+        ring.setPixelColor(pos, rot); // Rot
+    } else if ((step / ring.numPixels()) % 4 == 1) {
+        effectSpeed = 20; // Schnell
+        ring.setPixelColor(pos, gruen); // Grün
+    } else if ((step / ring.numPixels()) % 4 == 2) {
+        effectSpeed = 250; // Langsamer
+        ring.setPixelColor(pos, blau); // Blau
+    } else {
+        effectSpeed = 50; // Mittel
+        ring.setPixelColor(pos, magenta); // Magenta
+    }
 }

@@ -38,30 +38,13 @@ void loop() {
  * hier kommt am Ende dein Effekt 1 hin - bis dahin einfach leer lassen
  ***********************************************************************************/
 void deinEffekt1(int step) {
+    // Geschwindigkeit festlegen (alle 50 ms ein Update)
+    effectSpeed = 25;
 
-    // Farben definieren
-    // int farbe = ring.Color(Rot, Grün, Blau);
-    int rot = ring.Color(255, 0, 0);
-    int gruen = ring.Color(0, 255, 0);
-    int blau = ring.Color(0, 0, 255);
-    int magenta = ring.Color(255, 0, 255);
+    for(int led = 0; led < ring.numPixels(); led++) {
+        // Berechnet den Farbton (Hue) basierend auf Position (led) und Zeit (step)
+        int hue = (led * 3000 + step * 300) % 65536; 
 
-    // Beispiel: Lauflicht in verschiedenen Farben
-    int pos = step % ring.numPixels();
-    ring.clear();
-    
-    // Farbe wechselt alle 24 Schritte
-    if ((step / ring.numPixels()) % 4 == 0) {
-        effectSpeed = 100; // Mittel
-        ring.setPixelColor(pos, rot); // Rot
-    } else if ((step / ring.numPixels()) % 4 == 1) {
-        effectSpeed = 20; // Schnell
-        ring.setPixelColor(pos, gruen); // Grün
-    } else if ((step / ring.numPixels()) % 4 == 2) {
-        effectSpeed = 250; // Langsamer
-        ring.setPixelColor(pos, blau); // Blau
-    } else {
-        effectSpeed = 50; // Mittel
-        ring.setPixelColor(pos, magenta); // Magenta
+        ring.setPixelColor(led, ring.ColorHSV(hue));
     }
 }

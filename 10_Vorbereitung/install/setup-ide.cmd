@@ -1,4 +1,5 @@
 @echo off
+chcp 65001
 setlocal
 
 :: ==========================================================
@@ -22,22 +23,10 @@ if %errorlevel% neq 0 (
 echo winget verfügbar.
 
 :: ==========================================================
-:: SCHRITT 1: GIT SILENT INSTALLATION (USER)
+:: SCHRITT 1: VS CODE SILENT INSTALLATION (USER)
 :: ==========================================================
 echo.
-echo === 1/4 Starte Git Installation (User Scope) ===
-winget install --id Git.Git --scope user --silent --accept-package-agreements --accept-source-agreements
-if errorlevel 1 (
-    echo Fehler: Git Installation fehlgeschlagen.
-) else (
-    echo Git erfolgreich installiert.
-)
-
-:: ==========================================================
-:: SCHRITT 2: VS CODE SILENT INSTALLATION (USER)
-:: ==========================================================
-echo.
-echo === 2/4 Starte VS Code Installation (User Scope) ===
+echo === 1/3 Starte VS Code Installation (User Scope) ===
 winget install --id Microsoft.VSCode --scope user --silent --accept-package-agreements --accept-source-agreements
 if errorlevel 1 (
     echo Fehler: VS Code Installation fehlgeschlagen.
@@ -49,10 +38,10 @@ if errorlevel 1 (
 timeout /t 10 /nobreak >nul
 
 :: ==========================================================
-:: SCHRITT 3: VS CODE STARTEN
+:: SCHRITT 2: VS CODE STARTEN
 :: ==========================================================
 echo.
-echo === 3/4 Starte VS Code ===
+echo === 2/3 Starte VS Code ===
 if exist %VSCODE_PATH%.exe (
     start "" %VSCODE_PATH%
     echo VS Code wurde gestartet.
@@ -65,10 +54,10 @@ if exist %VSCODE_PATH%.exe (
 timeout /t 5 /nobreak >nul
 
 :: ==========================================================
-:: SCHRITT 4: VS CODE ERWEITERUNGEN INSTALLATION (USER)
+:: SCHRITT 3: VS CODE ERWEITERUNGEN INSTALLATION (USER)
 :: ==========================================================
 echo.
-echo === 4/4 Installiere Sprachpaket und PlatformIO ===
+echo === 3/3 Installiere Sprachpaket und PlatformIO ===
 
 if exist %VSCODE_PATH%.exe (
     echo.

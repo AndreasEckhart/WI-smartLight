@@ -1,12 +1,18 @@
 {
 	"folders": [
 		{
-			"name": "01 - Grundlagen"
+			"name": "01 - Grundlagen",
 			"path": "01_Grundlagen"
 		},
 		{
-			"name": "02 - WI-smartLight"
+			"name": "02 - WI-smartLight",
 			"path": "02_WI-smartLight"
 		}
-	]
+	],
+	"settings": {
+		"chat.disableAIFeatures": true,
+		"github.copilot.enabled": false,
+		"editor.inlineSuggest.enabled": false,
+		"github.copilot.nextEditSuggestions.enabled": false
+	}
 }

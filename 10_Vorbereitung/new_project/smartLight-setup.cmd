@@ -1,4 +1,5 @@
 @echo off
+chcp 65001
 setlocal
 
 :: ==========================================
@@ -43,7 +44,7 @@ for /d %%i in ("%EXTRACT_FOLDER%\*") do set "PROJECT_DIR=%%i"
 set "TARGET_WORKSPACE_PATH=%PROJECT_DIR%\%WORKSPACE_FILE_NAME%"
 
 echo Starte VS Code...
-code "%TARGET_WORKSPACE_PATH%"
+code "%TARGET_WORKSPACE_PATH%" --no-wait
 
 echo Fertig! Projekt wurde in VS Code geöffnet.
-pause
+

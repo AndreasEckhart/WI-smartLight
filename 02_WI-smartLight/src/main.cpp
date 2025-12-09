@@ -367,7 +367,7 @@ void checkWiFi() {
   }
   
   if(wifi_enabled) {
-    if (millis() - lastWiFiCheck >= 60000) { // Alle 60 Sekunden prüfen
+    if (millis() - lastWiFiCheck >= 10000) { // Alle 10 Sekunden prüfen (schneller)
       lastWiFiCheck = millis();
 
       // Prüfen ob AP-Modus aktiv ist
@@ -377,13 +377,29 @@ void checkWiFi() {
         // Kein AP: normale Reconnect-Logik
         if (WiFi.status() != WL_CONNECTED) {
           onlineStatus = false;
-          Serial.println("WiFi disconnected, attempting to reconnect");
-          WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
+          Serial.print("WiFi disconnected (status=");
+          Serial.print(WiFi.status());
+          Serial.println("), attempting to reconnect...");
+          
+          // WiFi.begin ist non-blocking auf ESP32, Verbindung läuft im Hintergrund
+          WiFi.reconnect();
+          
+          // Warte bis zu 5 Sekunden auf Verbindung
+          unsigned long reconnectStart = millis();
+          while (WiFi.status() != WL_CONNECTED && (millis() - reconnectStart < 5000)) {
+            delay(100);
+            yield(); // Gib anderen Tasks Zeit
+          }
+          
           if (WiFi.status() == WL_CONNECTED) {
-            Serial.println("WiFi reconnected");
+            Serial.println("WiFi reconnected successfully");
             onlineStatus = true;
             // Vorsichtshalber DNS stoppen, falls noch aktiv
             dnsServer.stop();
+          } else {
+            Serial.print("WiFi reconnect failed (status=");
+            Serial.print(WiFi.status());
+            Serial.println(")");\
           }
         } else {
           onlineStatus = true; // Setze Online-Status auf true, wenn verbunden

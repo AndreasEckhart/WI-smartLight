@@ -104,7 +104,16 @@ async function loadStatus() {
         document.getElementById('mode').textContent = data.mode;
         document.getElementById('ip').textContent = data.ip;
         document.getElementById('wifiStatus').textContent = data.wifi_status;
-        document.getElementById('mqttStatus').textContent = data.mqtt_status;
+        
+        // MQTT Status mit Link, wenn verbunden
+        const mqttStatusElement = document.getElementById('mqttStatus');
+        if (data.mqtt_status && data.mqtt_status.toLowerCase().includes('verbunden')) {
+            const chipId = data.chip_id;
+            mqttStatusElement.innerHTML = `${data.mqtt_status} - <a href="https://os-beyond.at/schnuppern/index.html?client_id=${chipId}" target="_blank">Test</a>`;
+        } else {
+            mqttStatusElement.textContent = data.mqtt_status;
+        }
+        
         document.getElementById('currentEffect').textContent = data.current_effect;
         document.getElementById('currentBrightness').textContent = data.brightness || '-';
         document.getElementById('currentWechselzeit').textContent = formatTime(data.auto_timer) || '-';
@@ -128,10 +137,10 @@ async function loadStatus() {
             document.getElementById('wifiEnabled').checked = data.wifi_enabled;
             document.getElementById('mqttEnabled').checked = data.mqtt_enabled;
             document.getElementById('ssid').value = data.wifi_ssid || '';
-            document.getElementById('mqttServer').value = data.mqtt_server || '';
+            document.getElementById('mqttServer').value = data.mqtt_server || 'ae6eb0d482a24683b08611859374ec88.s1.eu.hivemq.cloud';
             document.getElementById('mqttPort').value = data.mqtt_port || 8883;
-            document.getElementById('mqttUser').value = data.mqtt_user || '';
-            document.getElementById('mqttTopic').value = data.mqtt_topic || 'esp32/status';
+            document.getElementById('mqttUser').value = data.mqtt_user || 'testHTL';
+            document.getElementById('mqttTopic').value = data.mqtt_topic || 'schnuppern';
             document.getElementById('statusLedEnabled').checked = data.led_enabled;
 
             // Activate/deactivate input fields based on checkbox state

@@ -15,7 +15,6 @@
 		"**/.gitignore": true,
 		"**/.vscode": true,
 		"**/include": true,
-		"**/data": true,
 		"**/lib": true,
 		"**/test": true,
 		"**/main.cpp": true

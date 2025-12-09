@@ -1136,28 +1136,32 @@ void fingerLedEffect() {
   }
 }
 
-// Hilfsfunktion zum Parsen der Farbe:
-u_int32_t hexToNeoPixelColor(const char* hexColor) {
-  // Überprüfen auf ungültige Eingabe: Nullzeiger, falsche Länge oder fehlendes '#'-Präfix
-  if (hexColor == nullptr || strlen(hexColor) != 7 || hexColor[0] != '#') {
-    // Ungültiges Eingabeformat, gib ROT zurück (oder eine andere Fehlerfarbe)
-    return ring.Color(255, 0, 0);
+// Hilfsfunktion zum Parsen der Farbe (Hex oder RGB-Format):
+u_int32_t hexToNeoPixelColor(const char* colorString) {
+  if (colorString == nullptr || strlen(colorString) == 0) {
+    return ring.Color(255, 0, 0); // Fallback: Rot
   }
-
-  // Parsen der Hexadezimal-Teile für Rot, Grün, Blau
-  // Erstellen von temporären Zeichenketten für jede Farbkomponente
-  char hexRed[3] = {hexColor[1], hexColor[2], '\0'};    // Zeichen 1 und 2 für Rot
-  char hexGreen[3] = {hexColor[3], hexColor[4], '\0'};  // Zeichen 3 und 4 für Grün
-  char hexBlue[3] = {hexColor[5], hexColor[6], '\0'};   // Zeichen 5 und 6 für Blau
-
-  // Konvertieren der Hex-Teile in Integer-Werte (0-255)
-  // strtol (string to long) wird verwendet, um eine Zeichenkette in eine Zahl umzuwandeln.
-  // Der dritte Parameter '16' gibt an, dass die Basis Hexadezimal ist.
-  uint8_t r = strtol(hexRed, nullptr, 16);
-  uint8_t g = strtol(hexGreen, nullptr, 16);
-  uint8_t b = strtol(hexBlue, nullptr, 16);
-
-  // Den kombinierten Farbwert mit strip.Color() zurückgeben
-  // strip.Color() kombiniert die 8-Bit-RGB-Werte zu einem 32-Bit-Farbwert
-  return ring.Color(r, g, b);
+  
+  // RGB-Format: "rgb(255, 255, 255)"
+  if (strncmp(colorString, "rgb(", 4) == 0) {
+    uint8_t r = 0, g = 0, b = 0;
+    sscanf(colorString, "rgb(%hhu, %hhu, %hhu)", &r, &g, &b);
+    return ring.Color(r, g, b);
+  }
+  
+  // Hex-Format: "#RRGGBB"
+  if (colorString[0] == '#' && strlen(colorString) == 7) {
+    char hexRed[3] = {colorString[1], colorString[2], '\0'};
+    char hexGreen[3] = {colorString[3], colorString[4], '\0'};
+    char hexBlue[3] = {colorString[5], colorString[6], '\0'};
+    
+    uint8_t r = strtol(hexRed, nullptr, 16);
+    uint8_t g = strtol(hexGreen, nullptr, 16);
+    uint8_t b = strtol(hexBlue, nullptr, 16);
+    
+    return ring.Color(r, g, b);
+  }
+  
+  // Fallback: Rot
+  return ring.Color(255, 0, 0);
 }

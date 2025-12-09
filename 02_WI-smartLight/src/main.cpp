@@ -69,11 +69,12 @@ String ap_ssid = "smartLight-Config-" + getDeinName();
 String ap_password = "12345678";
 String currentVersion = PRODUCT_VERSION;
 
-String mqtt_server = "";
+// MQTT Server von GreiA
+String mqtt_server = "ae6eb0d482a24683b08611859374ec88.s1.eu.hivemq.cloud";
 int mqtt_port = 8883;
-String mqtt_user = "";
-String mqtt_password = "";
-String mqtt_topic = "esp32/status";
+String mqtt_user = "testHTL";
+String mqtt_password = "iOT12XX23by";
+String mqtt_topic = "schnuppern";
 bool mqtt_enabled = false;
 
 // LED Effekte
@@ -357,11 +358,12 @@ void startWiFi() {
 }
 
 void checkWiFi() {
+  // MQTT Loop (nicht blockierend)
   if (mqtt_enabled && !ap_mode && onlineStatus) {
+    mqttClient.loop(); // Zuerst loop aufrufen
     if (!mqttClient.connected()) {
-      reconnectMQTT();
+      reconnectMQTT(); // Dann reconnect (mit eigenem Timeout)
     }
-    mqttClient.loop();
   }
   
   if(wifi_enabled) {
@@ -443,19 +445,29 @@ void setupWebServer() {
 void setupMQTT() {
   if (mqtt_server.length() > 0) {
     wifiClient.setInsecure(); // Use this only for testing, it allows connecting without a root certificate
+    wifiClient.setTimeout(5); // 5 Sekunden Timeout für TLS
     mqttClient.setServer(mqtt_server.c_str(), mqtt_port);
     mqttClient.setCallback(mqttCallback); // Callback setzen
-    reconnectMQTT();
+    mqttClient.setSocketTimeout(5); // 5 Sekunden Socket-Timeout
+    // KEIN reconnectMQTT() hier! Wird im loop() aufgerufen
   }
 }
 
 void reconnectMQTT() {
   if (mqtt_server.length() == 0) return;
+  if (!wifi_enabled || ap_mode) return; // Nur verbinden wenn WiFi aktiv und nicht im AP-Modus
   
   static unsigned long lastAttempt = 0;
-  if (millis() - lastAttempt < 5000) return;
+  if (millis() - lastAttempt < 15000) return; // 15 Sekunden zwischen Versuchen
   lastAttempt = millis();
   
+  // Prüfen ob WiFi verbunden ist
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("MQTT: Warte auf WiFi-Verbindung");
+    return;
+  }
+  
+  Serial.println("MQTT: Verbindungsversuch...");
   String clientId = "WI-" + getChipId();
   
   bool connected = false;
@@ -466,12 +478,10 @@ void reconnectMQTT() {
   }
   
   if (connected) {
-    Serial.println("MQTT connected");
-    //publishStatus();
+    Serial.println("MQTT verbunden");
     mqttClient.subscribe((mqtt_topic).c_str());
-    //mqttClient.subscribe((mqtt_topic + "/brightness").c_str());
   } else {
-    Serial.print("MQTT connection failed, rc=");
+    Serial.print("MQTT Verbindung fehlgeschlagen, rc=");
     Serial.println(mqttClient.state());
   }
 }

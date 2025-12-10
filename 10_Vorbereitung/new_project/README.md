@@ -21,7 +21,7 @@ Das Projekt wird dann auf dem Desktop unter `Desktop\2025-WI-Schnuppern\WI-smart
 
 #### Download-Links:
 
-- **[smartLight-setup.cmd herunterladen](smartLight-setup.cmd)** ⬇️
+- **[smartLight-setup.cmd herunterladen](https://github.com/AndreasEckhart/WI-smartLight/raw/main/10_Vorbereitung/new_project/smartLight-setup.cmd)** ⬇️
 
 ### Option 2: Manuelle Setup
 

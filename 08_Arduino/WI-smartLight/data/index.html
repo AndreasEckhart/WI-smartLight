@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    
+    <!-- 
+                               _   _     _       _     _   
+      ___ _ __ ___   __ _ _ __| |_| |   (_) __ _| |__ | |_ 
+     / __| '_ ` _ \ / _` | '__| __| |   | |/ _` | '_ \| __|
+     \__ \ | | | | | (_| | |  | |_| |___| | (_| | | | | |_ 
+     |___/_| |_| |_|\__,_|_|   \__|_____|_|\__, |_| |_|\__|
+                                           |___/           
+
+    ESP32 LED Controller mit Webinterface und MQTT
+    HTL-Anichstrasse, Innsbruck
+    Wirtschaftsingenieure - Betriebsinformatik / (c)2025 Andreas Eckhart
+    -->
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WI-smartLight</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div id="message" class="message"></div>
+    <div class="overlay" id="overlay"></div>
+    <div class="main-content" id="mainContent">
+        <div class="container">
+            <div class="header-section">
+                <h1>WI-smartLight<br><span id="userName" class="user-name"></span></h1>
+                <!--<button class="logout-btn" onclick="logout()">Abmelden</button>-->
+            </div>
+
+            <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion('status')">
+                    <h2>Status</h2>
+                    <span class="accordion-icon">+</span>
+                </div>
+                <div class="accordion-content" id="status">
+                    <div class="status-grid">
+                        <h3 class="status-category">System</h3>
+                        <div class="status-item">
+                            <span class="status-label">Chip ID:</span>
+                            <span id="chipId">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Uptime:</span>
+                            <span id="uptime">-</span>
+                        </div>
+                        <h3 class="status-category">Netzwerk</h3>
+                        <div class="status-item">
+                            <span class="status-label">Modus:</span>
+                            <span id="mode">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">WiFi Status:</span>
+                            <span id="wifiStatus">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">IP Adresse:</span>
+                            <span id="ip">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">MQTT Status:</span>
+                            <span id="mqttStatus">-</span>
+                        </div>
+                        <h3 class="status-category">LED Effekte</h3>
+                        <div class="status-item">
+                            <span class="status-label">Aktueller Effekt:</span>
+                            <span id="currentEffect">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Helligkeit:</span>
+                            <span id="currentBrightness">-</span>
+                        </div>
+                        <div class="status-item auto-mode" id="currentWechselzeitStatus">
+                            <span class="status-label">Wechselzeit:</span>
+                            <span id="currentWechselzeit">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion('effects')">
+                    <h2>LED Effekte</h2>
+                    <span class="accordion-icon">+</span>
+                </div>
+                <div class="accordion-content" id="effects">
+                    <div class="form-group">
+                        <label for="effectSelect">Effekt auswählen:</label>
+                        <select id="effectSelect" onchange="changeEffect()">
+                            <option value="0">Auto-Modus</option>
+                            <option value="1">Dein Effekt 1</option>
+                            <option value="2">Dein Effekt 2</option>
+                            <option value="3">Dein Effekt 3</option>
+                            <option value="4">Regenbogen</option>
+                            <option value="5">Pixelrennen</option>
+                            <option value="6">Feuer</option>
+                            <option value="7">Alle aus</option>
+                        </select>
+                    </div>
+
+                    <!-- Wechselzeit-Slider - nur sichtbar bei Effekt 0 (Auto) -->
+                    <div class="wechselzeit-container" id="wechselzeitContainer">
+                        <div class="form-group">
+                            <label for="wechselzeitSlider">Wechselzeit: <span class="time-display" id="wechselzeitValue">30 Sekunden</span></label>
+                            <div class="slider-container">
+                                <input type="range" 
+                                       id="wechselzeitSlider" 
+                                       class="slider" 
+                                       min="5" 
+                                       max="600" 
+                                       value="30" 
+                                       step="5"
+                                       oninput="updateWechselzeit(this.value)"
+                                       onchange="setWechselzeit(this.value)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brightnessSlider">Helligkeit: <span class="time-display" id="brightnessValue">20</span></label>
+                        <div class="slider-container">
+                            <input type="range" 
+                                   id="brightnessSlider" 
+                                   class="slider" 
+                                   min="0" 
+                                   max="100" 
+                                   value="20" 
+                                   oninput="updateBrightness(this.value)"
+                                   onchange="setBrightness(this.value)">
+                        </div>
+                    </div>
+                    <br>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="statusLedEnabled" onchange="toggleStatusLed()">
+                            Status-LED aktivieren
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion('wifi')">
+                    <h2>WLAN Konfiguration</h2>
+                    <span class="accordion-icon">+</span>
+                </div>
+                <div class="accordion-content" id="wifi">
+                    <form id="wifiForm">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="wifiEnabled" name="enabled">
+                                WLAN aktivieren
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="ssid">SSID:</label>
+                            <div class="input-group">
+                                <input type="text" id="ssid" name="ssid" required>
+                                <button type="button" onclick="scanWiFi()">Scannen</button>
+                            </div>
+                        </div>
+                        <div id="wifiList" class="wifi-list"></div>
+                        <div class="form-group">
+                            <label for="password">Passwort:</label>
+                            <div class="input-group password-group">
+                                <input type="password" id="password" name="password">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password')">
+                                    <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-slash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit">WLAN konfigurieren</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion('mqtt')">
+                    <h2>MQTT Konfiguration</h2>
+                    <span class="accordion-icon">+</span>
+                </div>
+                <div class="accordion-content" id="mqtt">
+                    <form id="mqttForm">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="mqttEnabled" name="enabled">
+                                MQTT aktivieren
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="mqttServer">Server:</label>
+                            <input type="text" id="mqttServer" name="server" placeholder="broker.hivemq.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="mqttPort">Port:</label>
+                            <input type="number" id="mqttPort" name="port" value="1883" min="1" max="65535">
+                        </div>
+                        <div class="form-group">
+                            <label for="mqttUser">Benutzername (optional):</label>
+                            <input type="text" id="mqttUser" name="user">
+                        </div>
+                        <div class="form-group">
+                            <label for="mqttPassword">Passwort (optional):</label>
+                            <div class="input-group password-group">
+                                <input type="password" id="mqttPassword" name="password">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('mqttPassword')">
+                                    <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-slash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="mqttTopic">Topic:</label>
+                            <input type="text" id="mqttTopic" name="topic" value="esp32/status">
+                        </div>
+                        <button type="submit">MQTT konfigurieren</button>
+                    </form>
+                </div>
+            </div>
+        
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion('danger')">
+                    <h2>System</h2>
+                    <span class="accordion-icon">+</span>
+                </div>
+                <div class="accordion-content" id="danger">
+                    <!--
+                    <div class="password-change-section">
+                        <h3>Passwort ändern</h3>
+                        <form id="passwordForm">
+                            <div class="form-group">
+                                <label for="currentPassword">Aktuelles Passwort:</label>
+                                <div class="input-group password-group">
+                                    <input type="password" id="currentPassword" name="currentPassword" required>
+                                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('currentPassword')">
+                                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                        <svg class="eye-slash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">Neues Passwort:</label>
+                                <div class="input-group password-group">
+                                    <input type="password" id="newPassword" name="newPassword" required minlength="6">
+                                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('newPassword')">
+                                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                        <svg class="eye-slash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Neues Passwort bestätigen:</label>
+                                <div class="input-group password-group">
+                                    <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirmPassword')">
+                                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                        <svg class="eye-slash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit">Passwort ändern</button>
+                        </form>
+                    </div>
+                    -->
+                    <div class="danger-zone">
+                        <h3>Danger Zone</h3>
+                        <button onclick="resetConfig()" class="danger-btn">Konfiguration löschen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>WI-smartLight v<span id="version"></span><br>© <script>document.write(new Date().getFullYear())</script> <a href="https://htlinn.ac.at/ausbildung/wirtschaftsingenieure-informatik" target="_blank">HTL-Anichstrasse / Wirtschaftsingenieure - Betriebsinformatik</a></p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
